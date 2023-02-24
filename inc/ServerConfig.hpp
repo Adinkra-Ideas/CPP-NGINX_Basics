@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __SERVERCONFIG_HPP__
-# define __SERVERCONFIG_HPP__
+#ifndef SERVERCONFIG_HPP
+# define SERVERCONFIG_HPP
 
 # include <iostream>
 # include <utility>

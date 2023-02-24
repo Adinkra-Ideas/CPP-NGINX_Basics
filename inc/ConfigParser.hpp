@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __CONFIGPARSER_HPP__
-# define __CONFIGPARSER_HPP__
+#ifndef CONFIGPARSER_HPP
+# define CONFIGPARSER_HPP
 
 # include <iostream>
 

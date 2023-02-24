@@ -1,4 +1,4 @@
-# include "../inc/ConfigParser.hpp"
+# include "ConfigParser.hpp"
 
 ConfigParser::ConfigParser( void ) : _nb_server(0) {}
 

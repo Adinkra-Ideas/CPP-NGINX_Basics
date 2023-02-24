@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __SERVERMANAGER_HPP__
-# define __SERVERMANAGER_HPP__
+#ifndef SERVERMANAGER_HPP
+# define SERVERMANAGER_HPP
 
 // # include <vector>
 # include <iostream>

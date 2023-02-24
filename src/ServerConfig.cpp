@@ -1,4 +1,4 @@
-# include "../inc/ServerConfig.hpp"
+# include "ServerConfig.hpp"
 
 ServerConfig::ServerConfig( void ) : _listen_fd(), _server_address(),
 					_server_address_len(sizeof(_server_address)) {
