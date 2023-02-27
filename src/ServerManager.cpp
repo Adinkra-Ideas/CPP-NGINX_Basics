@@ -13,12 +13,20 @@ ServerManager& ServerManager::operator= ( const ServerManager& other ) {
 	return *this;
 }
 
-void    ServerManager::setupServers( std::pair<std::string, int>& sock_addr ) {
+//TODO getting also all the FD and bindings
+void    ServerManager::setupServers(std::vector<ServerConfig> servers)
+{
+	this->_servers = servers;
 
-	_servers.setupServer(sock_addr);
+	for (std::vector<ServerConfig>::iterator iter = this->_servers.begin(); iter != this->_servers.end(); iter++)
+	{
 
+		iter->setupServer();
+	}
+	
 }
 
+//TODO coding the running of the server
 void    ServerManager::runServers( void ) {
 	int outbound_socket;
 	long bytesSent;
@@ -29,8 +37,8 @@ void    ServerManager::runServers( void ) {
 	tmp << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
 		<< webpage.size() << "\n\n" << webpage;
 	httpResponse = tmp.str();
-
-	if ( listen(_servers.getListen_fd(), MAX_QUEUE) )
+	std::cout << _servers[0].getListen_fd() << std::endl;
+	if ( listen(_servers[0].getListen_fd(), MAX_QUEUE) )
 	{
         // Logger::logMsg(RED, CONSOLE_OUTPUT, "webserv: listen error: %s   Closing....", strerror(errno));
         std::cerr << "\nwebserv: listen error:  Closing...." << std::endl;
@@ -38,22 +46,22 @@ void    ServerManager::runServers( void ) {
     }
 
 	std::cout << "\n====== webserv: Listening on Socket Address ====== " <<
-				inet_ntoa(_servers.getServer_address().sin_addr) << ":" <<
-				ntohs(_servers.getServer_address().sin_port) << std::endl;
+				inet_ntoa(_servers[0].getServer_address().sin_addr) << ":" <<
+				ntohs(_servers[0].getServer_address().sin_port) << std::endl;
 
 	while (true)
 	{
 		{
 			std::cout << "\n====== Waiting for a new connection request ======\n\n\n";
 
-			outbound_socket = accept(_servers.getListen_fd(),
-					(sockaddr *)&_servers.getServer_address(),
-					&_servers.getServer_address_len());
+			outbound_socket = accept(_servers[0].getListen_fd(),
+					(sockaddr *)&_servers[0].getServer_address(),
+					&_servers[0].getServer_address_len());
 				
 			std::cout << "------ New Outbound Socket Address " << outbound_socket
 				<< " Opened for Client "
-				<< inet_ntoa(_servers.getServer_address().sin_addr) << ":" 
-				<< ntohs(_servers.getServer_address().sin_port) << " ------\n\n";
+				<< inet_ntoa(_servers[0].getServer_address().sin_addr) << ":" 
+				<< ntohs(_servers[0].getServer_address().sin_port) << " ------\n\n";
 			
 			bytesSent = write(outbound_socket, httpResponse.data(), httpResponse.size());
 			if ( bytesSent >= 0 &&

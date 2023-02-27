@@ -24,7 +24,7 @@ $(OBJECTS_PREFIXED): build/%.o : src/%.cpp
 	$(CXX) $(CXXFLAGS) -c -I$(HEADER) $< -o $@ 
 
 clean:		
-			/bin/rm -f $(OBJ)
+			/bin/rm -rf $(OBJDIR)
 				
 fclean:		clean
 			/bin/rm -f $(NAME)

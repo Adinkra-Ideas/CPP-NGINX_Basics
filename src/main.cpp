@@ -4,12 +4,19 @@
 # include "ServerManager.hpp"
 # include "ServerConfig.hpp"
 
-int main( void ) {
-	std::pair<std::string, int>		sock_addr("127.0.0.1", 8080);
+int main( int argc, char **argv )
+{
+
 	ConfigParser					cluster;
 	ServerManager					master;
+	if (argc == 1)
+		cluster.createCluster();
+	else if (argc == 2)
+		std::cout << argv[1] << std::endl;
+	else
+		exit(1);
 
-	master.setupServers(sock_addr);
+	master.setupServers(cluster.getServers());
 	master.runServers();
 	
 

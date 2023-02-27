@@ -2,18 +2,16 @@
 #ifndef SERVERMANAGER_HPP
 # define SERVERMANAGER_HPP
 
-// # include <vector>
-# include <iostream>
-# include <utility>
-# include <string>
-# include <sstream>
-# include <unistd.h>
 
+
+#include <WebServer.hpp>
 # include "ServerConfig.hpp"
 class ServerConfig;
 
 # define MAX_QUEUE 20
 
+//the webserver
+//starts and runs the servers
 class ServerManager {
 public:
 	ServerManager( void );
@@ -22,11 +20,11 @@ public:
 
 	ServerManager& operator= ( const ServerManager& other );
 
-	void    setupServers( std::pair<std::string, int>& sock_addr );
+	void    setupServers(std::vector<ServerConfig> servers);
 	void    runServers( void );
 
 private:
-	ServerConfig	_servers;
+	std::vector<ServerConfig>	_servers;
 
 };
 
