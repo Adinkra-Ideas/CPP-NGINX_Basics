@@ -22,17 +22,6 @@ namespace ft {
 		std::exit(1);
 	}
 
-	int		parse_config(const char *path) {
-		std::ifstream 	_fin;
 
-		_fin.open(path);
-		if (  ! _fin.good() )
-			return (1);
-		
-		// FOR TEST PURPOSE
-		std::cout << ft_YELLOW << "config file named \"" << path << "\" opened successfully" << std::endl;
-		
-		return (0);
-	}
 
 }	// namespace ft

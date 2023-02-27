@@ -40,7 +40,7 @@ namespace ft {
 	//////////////////////// EXTERNAL HELPER FUNCTIONS BEGIN ////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////
 	void	exit_with_error(const char *color, const std::string& msg);
-	int		parse_config(const char *path);
+	
 
 }	// namespace ft
 
