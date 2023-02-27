@@ -1,6 +1,7 @@
-# include "includes/Server.hpp"
-# include "includes/Location.hpp"
+# include "Server.hpp"
+# include "Location.hpp"
 
+//isnt used
 int main (int argc, char *argv[], char *envp[])
 {
 	std::vector<ft::Server> test;	// we need a Vector of Servers
@@ -14,3 +15,4 @@ int main (int argc, char *argv[], char *envp[])
 
 	return 0;
 }
+
