@@ -2,14 +2,9 @@
 #ifndef __SERVER_HPP__
 # define __SERVER_HPP__
 
-# define ft_RESET_COLOR	"\033[0m"
-# define ft_RED			"\033[1;31m"
-# define ft_YELLOW		"\033[1;33m"
-
 # include <iostream>
 # include <string>
 # include <vector>
-# include <cstdlib>
 # include <fstream>
 
 # include <sys/socket.h>
@@ -36,11 +31,6 @@ namespace ft {
 		std::vector<Location>	_locations;				// (OPTIONAL)	For setting multiple single-level-deep locations for this Server instance (if present in config file)
 
 	};
-
-	//////////////////////// EXTERNAL HELPER FUNCTIONS BEGIN ////////////////////////
-	/////////////////////////////////////////////////////////////////////////////////
-	void	exit_with_error(const char *color, const std::string& msg);
-	
 
 }	// namespace ft
 

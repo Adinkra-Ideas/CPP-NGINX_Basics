@@ -1,7 +1,7 @@
 NAME	=	webserv
 
 SRC		=	main.cpp	src/Server.cpp	src/Location.cpp	\
-			src/ConfigParser.cpp
+			src/ConfigParser.cpp	src/utils.cpp
 
 OBJ			=	$(SRC:.cpp=.o)
 
