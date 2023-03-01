@@ -1,65 +1,35 @@
-server {
-    listen 8002;
-	server_name localhost;
-    host 127.0.0.1;
-    root docs/fusion_web/;
-    # client_max_body_size 3000000;
-	index index.html;
-    error_page 404 error_pages/404.html;
-
-    location / {
-        allow_methods  DELETE POST GET;
-        autoindex off;
-    }
-    
-    location /tours {
-        autoindex on;
-        index tours1.html;
-        allow_methods GET POST PUT HEAD;
-    }
-
-	location /red {
-		return /tours;
+server {							### FOR EACH SERVER
+    listen 127.0.0.1:7655;			#Choose the port and host of each ’server’ (MANDATORY)
+	server_name	myServer;			#Setup the server_names or not (OPTIONAL)
+	error_page	html/error_pages;	#Setup default error pages. (MANDATORY)
+#	client_max_body_size 100M;		# Limit client body size. (MANDATORY, I copied this from NGINX original config)
+	location / {
+		methods		GET, GP;			#Define a list of accepted HTTP methods for the route.(OPTIONAL)
+		index		index.html;		#Set a default file to answer if the request is a directory(OPTIONAL)
+		root		html;			#Define a directory or a file from where the file should be searched(MANDATORY)
 	}
-
-    location /cgi-bin {
-        root ./;
-        allow_methods GET POST DELETE;
-        index time.py;
-        cgi_path /usr/bin/python3 /bin/bash;
-        cgi_ext .py .sh;
-    }
-}
-
-server {
-    listen 8003;
-	server_name localhost;
-    host 127.0.0.1;
-    root docs/fusion_web/;
-    # client_max_body_size 3000000;
-	index index.html;
-    error_page 404 error_pages/404.html;
-
-    location / {
-        allow_methods  DELETE POST GET;
-        autoindex off;
-    }
-    
-    location /tours {
-        autoindex on;
-        index tours1.html;
-        allow_methods GET POST PUT HEAD;
-    }
-
-	location /red {
-		return /tours;
+	location /_autoind_off {
+		methods		GOT;
+		index		cource.jpg;
+		root		html/images;
 	}
-
-    location /cgi-bin {
-        root ./;
-        allow_methods GET POST DELETE;
-        index time.py;
-        cgi_path /usr/bin/python3 /bin/bash;
-        cgi_ext .py .sh;
-    }
+	location /images_for_delete/ {
+		autoindex	on;
+		methods		GET, PUT, DELETE;
+		index		index.html;
+		root		html/images_for_delete;
+	}
+	location /cgi-bin {
+		methods		GET, POST;
+		index		cgi_main.py;
+		root		html/cgi-bin;
+		exec		cgi_main.py;
+	}
+	location /cgi-php {
+		max_body	5;
+		methods		GET, POST;
+		root		html/cgi-php;
+		exec		cgi_main.php;
+		index		ut;
+	}
 }

@@ -4,7 +4,8 @@ namespace ft {
 
 	// **************** FUNCTIONS FOR PRINTING STATUS BEGINS ******************
 	void	exit_with_error(const std::string& msg) {
-		std::cout << ft_RED << msg << ft_RESET_COLOR << std::endl;
+		std::cout << ft_RED << "Error! " << msg << "!"
+					<< ft_RESET_COLOR << std::endl;
 		std::exit(1);
 	}
 
