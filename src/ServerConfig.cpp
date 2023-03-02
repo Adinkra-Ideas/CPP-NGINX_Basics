@@ -1,4 +1,4 @@
-# include "ServerConfig.hpp"
+#include "ServerConfig.hpp"
 #include <cstring>
 #include <cerrno>
 ServerConfig::ServerConfig( void ) : _listen_fd(), _server_address(),
@@ -19,7 +19,7 @@ ServerConfig::ServerConfig( const ServerConfig& other ) {
 }
 
 ServerConfig& ServerConfig::operator= ( const ServerConfig& other ) {
-	_listen_fd = other._listen_fd;
+	this->_listen_fd = other._listen_fd;
 	this->_host = other._host;
 	this->_port = other._port;
 	this->_server_address = other._server_address;

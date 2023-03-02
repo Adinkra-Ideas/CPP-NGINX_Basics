@@ -1,6 +1,7 @@
 NAME	=	webserv
 
-SRCS		=	main.cpp ConfigParser.cpp ServerConfig.cpp ServerManager.cpp
+SRCS		=	main.cpp ConfigParser.cpp ServerConfig.cpp ServerManager.cpp Client.cpp \
+				Request.cpp Response.cpp
 
 OBJDIR = build/
 SRCDIR = src/

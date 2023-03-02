@@ -23,6 +23,10 @@ void ConfigParser::createCluster()
 	std::string tmp = "Hello world";
 	createServer(tmp, server);
 	this->servers.push_back(server);
+	ServerConfig server2;
+	server2.setHost("127.0.0.2");
+	server2.setPort("80801");
+	this->servers.push_back(server2);
 }
 
 void ConfigParser::createCluster(std::string configFile)
