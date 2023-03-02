@@ -47,7 +47,7 @@ namespace ft {
 			erase_comments(line);
 			if ( fin && line.size() > 0 )
 				tmp << line << "\n";
-			if ( fin && verif_and_parse_one_server(servers, tmp.str()) )
+			if ( fin && parse_server(servers, tmp.str()) )
 				tmp.str("");
 		}
 		// if ( servers.size() == 0 )
@@ -62,7 +62,7 @@ namespace ft {
 	// Returns true if a Server object was configured.		*
 	// Else it returns false								*
 	// ******************************************************
-	bool	ConfigParser::verif_and_parse_one_server(std::vector<Server>& servers,
+	bool	ConfigParser::parse_server(std::vector<Server>& servers,
 													const std::string& context) {
 		std::size_t		pos = 0;
 		std::size_t		count = std::strlen("server");
@@ -80,12 +80,21 @@ namespace ft {
 	bool	ConfigParser::parse_one_server(std::vector<Server>& servers, std::string context) {
 		Server	serv;
 
-		while ( parse_locations(serv.refLocations(), context) )
+		print_status(ft_YELLOW, "Parsing Server Context...");
+
+		while ( parse_location(serv.refLocations(), context) )
 			;
 
-		//Call each of the remaining simple contexts within Server  here
+		parse_to_str(serv.readListen(), "\nlisten", context);
+		parse_to_str(serv.readName(), "\nserver_name", context);
+		parse_to_str(serv.readRoot(), "\nroot", context);
+		parse_to_str(serv.readMaxBody(), "\nclient_max_body_size", context);
+		parse_to_str(serv.readErrorPage(), "\nerror_page", context);
 
 		servers.push_back(serv);
+
+		print_status(ft_GREEN, "Server Context Parsed Successfully!");
+
 		return true;
 	}
 
@@ -94,7 +103,7 @@ namespace ft {
 	// The return value is true if successful, else it returns false if no 	*
 	// Location context was parsed.											*
 	// **********************************************************************
-	bool	ConfigParser::parse_locations(std::vector<Location>& locations, std::string& context) {
+	bool	ConfigParser::parse_location(std::vector<Location>& locations, std::string& context) {
 		Location		loc;
 		std::size_t		pos = 0;
 		std::size_t		count = std::strlen("location");
@@ -108,6 +117,8 @@ namespace ft {
 					int temp_end = context.find_first_of("}", temp_begin);
 					std::string _context = context.substr(temp_begin, temp_end - temp_begin);
 
+					print_status(ft_YELLOW, "Parsing Location Context nested within Server...");
+
 					parse_to_vect(loc.refMethods(), _context);
 					parse_to_str(loc.readRoot(), "\nroot", _context);
 					parse_to_str(loc.readIndex(), "\nindex", _context);
@@ -116,6 +127,8 @@ namespace ft {
 
 					locations.push_back(loc);
 					context.erase(pos, temp_end - (pos - 1));
+
+					print_status(ft_GREEN, "Location Context Parsed Successfully!");
 					return true;
 				}
 				else
@@ -177,9 +190,12 @@ namespace ft {
 					}
 			}	
 		}
-		else if ( ! std::strcmp("index", name + 1) ) { // for mandatory directives
-			std::cout << "name at error: " << name + 1 << std::endl;
-			msg << name + 1 << " Directive is Mandatory For Each \"Location\" Context";
+		else if ( ! std::strcmp("index", name + 1) ||
+					! std::strcmp("listen", name + 1) ||
+					! std::strcmp("root", name + 1) ||
+					! std::strcmp("error_page", name + 1) ) { // for mandatory directives
+			msg << "A Mandatory Simple Directive (" << name + 1
+				<< ") is missing!";
 			exit_with_error(msg.str());
 		}
 	}

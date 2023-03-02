@@ -14,6 +14,9 @@ all:		$(NAME)
 $(NAME):	$(OBJ)
 			$(CXX)	$(CXXFLAGS) $(OBJ)	-o $(NAME)
 
+test:
+			$(CXX) $(CXXFLAGS) assets/ForTestingPurpose.cpp src/Server.cpp src/Location.cpp \
+			src/ConfigParser.cpp src/utils.cpp -o $(NAME) && ./webserv assets/config.conf
 clean:		
 			/bin/rm -f $(OBJ)
 			/bin/clear
