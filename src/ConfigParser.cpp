@@ -26,8 +26,8 @@ namespace ft {
 	// ******************************************************************
 	// Simply reads from path and initializes X number of Server object	*
 	// into the servers vector.											*
-	// X meaning the number of server contexts (NGINX) obtained from	*
-	// the filepath dereferenced by path												*
+	// X representing the number of server contexts obtained from		*
+	// the filepath dereferenced by path								*
 	// ******************************************************************
 	void	ConfigParser::parse_config(std::vector<Server>& servers, const char *path) {
 		std::ifstream		fin;
@@ -47,22 +47,23 @@ namespace ft {
 			erase_comments(line);
 			if ( fin && line.size() > 0 )
 				tmp << line << "\n";
-			if ( fin && parse_server(servers, tmp.str()) )
+			if ( fin && find_server_context(servers, tmp.str()) )
 				tmp.str("");
 		}
-		// if ( servers.size() == 0 )
-			// error, couldn't find any valid server context in user-provided config file
+		if ( servers.size() == 0 )
+			exit_with_error("Unable To Find Any valid server context in config file");
+
 		print_status(ft_GREEN, "Config File Parsed Successfully!");
 	}
 
 	// ******************************************************
 	// Verify that context contains a whole server context.	*
-	// Then calls parse_one_server() to setup a Server	*
+	// Then calls parse_one_server() to setup a Server		*
 	// object using this server context.					*
 	// Returns true if a Server object was configured.		*
 	// Else it returns false								*
 	// ******************************************************
-	bool	ConfigParser::parse_server(std::vector<Server>& servers,
+	bool	ConfigParser::find_server_context(std::vector<Server>& servers,
 													const std::string& context) {
 		std::size_t		pos = 0;
 		std::size_t		count = std::strlen("server");
@@ -71,18 +72,21 @@ namespace ft {
 			if ( (count = context.find_first_not_of("\t ", pos + count)) != std::string::npos )
 				if ( ! context.compare(count, 1, "{", 0, 1) )
 					if ( (count = calculate_closing_brace_pos(context.data() + pos)) ) 
-						if ( parse_one_server(servers, context.substr(pos, count + 1)) )
-							return true;
+						return parse_one_server(servers, context.substr(pos, count + 1));
 		return false;
 	}
 
-	//
+	// ******************************************************************
+	// Parses 1 server context, then save to servers(param1) using		*
+	// servers.push_back()- The return value is true if successful, 	*
+	// else it returns false if no Location context was parsed.			*
+	// ******************************************************************
 	bool	ConfigParser::parse_one_server(std::vector<Server>& servers, std::string context) {
 		Server	serv;
 
 		print_status(ft_YELLOW, "Parsing Server Context...");
 
-		while ( parse_location(serv.refLocations(), context) )
+		while ( parse_one_location(serv.refLocations(), context) )
 			;
 
 		parse_to_str(serv.readListen(), "\nlisten", context);
@@ -98,12 +102,12 @@ namespace ft {
 		return true;
 	}
 
-	// **********************************************************************
-	// Parses 1 location context into locations using locations.push_back()	*
-	// The return value is true if successful, else it returns false if no 	*
-	// Location context was parsed.											*
-	// **********************************************************************
-	bool	ConfigParser::parse_location(std::vector<Location>& locations, std::string& context) {
+	// ******************************************************************
+	// Parses 1 location context, then save to locations(param1) using	*
+	// locations.push_back()- The return value is true if successful, 	*
+	// else it returns false if no Location context was parsed.			*
+	// ******************************************************************
+	bool	ConfigParser::parse_one_location(std::vector<Location>& locations, std::string& context) {
 		Location		loc;
 		std::size_t		pos = 0;
 		std::size_t		count = std::strlen("location");
