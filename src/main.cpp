@@ -9,6 +9,8 @@
 //TODO adding cgi
 //TODO adding timeout on connections
 //TODO adding a logger class?
+//TODO adding signal handlers?
+//TODO checking leaks
 int main( int argc, char **argv )
 {
 

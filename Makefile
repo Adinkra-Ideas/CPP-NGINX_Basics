@@ -12,7 +12,7 @@ SRCS_PREFIXED := $(addprefix $(SRCDIR), $(SRCS))
 OBJECTS_PREFIXED := $(addprefix $(OBJDIR), $(OBJS))
 CXX			=	c++
 
-CXXFLAGS	=	-Wall -Werror -Wextra -std=c++98 -pedantic -g3
+CXXFLAGS	=	-Wall -Werror -Wextra -std=c++98 -pedantic -g3 -fsanitize=address
 
 all:		$(NAME)
 

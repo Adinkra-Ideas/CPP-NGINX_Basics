@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:12:03 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/03 19:18:13 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/03 20:39:02 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ Client &Client::operator=(const Client &assign)
 		this->server = assign.server;
 		this->client_socket = assign.client_socket;
 		this->client_address = assign.client_address;
+		this->time_of_last_msg = assign.time_of_last_msg;
 	}
 	return (*this);
 }
