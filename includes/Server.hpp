@@ -22,8 +22,20 @@ namespace ft {
 
 		Server& operator= ( const Server& other );
 
-		void				writeListen(const std::string& listen);
-		const std::string&	readListen( void );
+		void				writePort(const int& port);
+		const int&			readPort( void );
+
+		void				writeIp(const std::string& listen);
+		const std::string&	readIp( void );
+
+		void				writeSockAddrLen(const unsigned int& port);
+		const unsigned int&	readSockAddrLen( void );
+
+		void				writeInSock(const int& fd);
+		const int&			readInSock( void );
+
+		void				writeOutSock(const int& fd);
+		const int&			readOutSock( void );
 
 		void				writeName(const std::string& name);
 		const std::string&	readName( void );
@@ -39,8 +51,17 @@ namespace ft {
 
 		std::vector<Location>&	refLocations( void );
 
+		struct	sockaddr_in&	refSockaddrs( void );
+
 	private:		
-		std::string				_listen;				// (MANDATORY) Choose the port and host of each ’server’
+		int						_port;
+		std::string				_ip;
+		struct	sockaddr_in		_sockAddrs;
+		unsigned int			_sockAddrs_len;			// Stores the sizeof(_sockAddrs)
+
+		int						_in_sock;				// for storing listening socket
+		int						_out_sock;				// for storing client socket used for establishing outbound traffic to client
+
 		std::string				_name;					// (OPTIONAL)	Set the server_names or not
 		std::string				_root;					// (MANDATORY)	Define a directory or a file from where the returned file should be searched
 		std::string				_max_body;				// (OPTIONAL)	Limit client body size

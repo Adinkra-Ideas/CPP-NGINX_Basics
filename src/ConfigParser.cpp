@@ -82,24 +82,68 @@ namespace ft {
 	// else it returns false if no Location context was parsed.			*
 	// ******************************************************************
 	bool	ConfigParser::parse_one_server(std::vector<Server>& servers, std::string context) {
-		Server	serv;
+		Server		serv;
+		std::string	listen_tmp;
 
 		print_status(ft_YELLOW, "Parsing Server Context...");
 
 		while ( parse_one_location(serv.refLocations(), context) )
 			;
 
-		parse_to_str(serv.readListen(), "\nlisten", context);
+		// parse_to_str(serv.readListen(), "\nlisten", context);
+		parse_to_str(serv.readIp(), "\nlisten", context);
 		parse_to_str(serv.readName(), "\nserver_name", context);
 		parse_to_str(serv.readRoot(), "\nroot", context);
 		parse_to_str(serv.readMaxBody(), "\nclient_max_body_size", context);
 		parse_to_str(serv.readErrorPage(), "\nerror_page", context);
+
+		setup_server_host(serv.refSockaddrs(), serv.readSockAddrLen(), serv.readIp(), serv.readPort());
 
 		servers.push_back(serv);
 
 		print_status(ft_GREEN, "Server Context Parsed Successfully!");
 
 		return true;
+	}
+
+	// **********************************************************************
+	// Uses the host address (IP:PORT) stored in ip(param3)					*
+	// to setup serv._sockAddrs object(param1) and also splitting IP:PORT	*
+	// stored in ip(param3) into separate IP and Port, then stored			*
+	// in serv._ip and serv._port.											*
+	// **********************************************************************
+	void	ConfigParser::setup_server_host(struct sockaddr_in& _sockAddrs, const unsigned int& sockAddrs_len,
+						const std::string& ip, const int& port) {
+		unsigned int&	_sockAddrs_len(const_cast<unsigned int&>(sockAddrs_len));
+		std::string&	_ip(const_cast<std::string&>(ip));
+		int&			_port(const_cast<int&>(port));
+		std::size_t		pos;
+
+		if ( (pos = _ip.find(":")) != std::string::npos ) {
+			if ( _ip.find_first_not_of("0123456789", ++pos) == std::string::npos ) {
+				if ( (_port = std::atoi(_ip.substr(pos, std::strlen(_ip.data() + pos)).data())) > 0
+						&& _port <= MAX_16_BIT ) {
+					_ip.erase(--pos);
+					if ( _ip.size() >= MIN_HOST_LEN ) {
+						_sockAddrs.sin_family = AF_INET;
+						_sockAddrs.sin_port = htons(_port);
+						_sockAddrs.sin_addr.s_addr = inet_addr(_ip.data());
+						_sockAddrs_len = sizeof(_sockAddrs);
+						if ( _sockAddrs.sin_addr.s_addr == static_cast<uint32_t>(-1) ) {
+							std::ostringstream	msg;
+							msg << "Cannot Interpret " << _ip << " As a Valid Local IP";
+							exit_with_error(msg.str());
+						}
+					}
+					else
+						exit_with_error("Invalid Local IP provided");
+				}
+				else
+					exit_with_error("Invalid 16-bit Host Port Number Provided");
+			}
+			else
+				exit_with_error("Provided Host Port Contains Non-Numeric Values");	;
+		}
 	}
 
 	// ******************************************************************
