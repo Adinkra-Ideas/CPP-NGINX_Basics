@@ -61,13 +61,8 @@ void    ServerManager::runServers( void ) {
 			else if (FD_ISSET(i, &write_fds_tmp) && this->connected_clients.count(i))
 			{
 				sendResponce(i, this->connected_clients[i]);
-
 			}
-				
-
 		}
-		
-
 	}	
 }
 
@@ -92,7 +87,6 @@ void ServerManager::acceptConnection(ft::Server &server)
 void ServerManager::readRequest(int fd, Client &client)
 {
 	char buffer[BUFFER_SIZE];
-	std::cout << "------ New ReadRequest from: " << fd << std::endl;
 	int bytes_read;
 	bytes_read = read(fd, buffer, BUFFER_SIZE);
 	std::string request(buffer, bytes_read);
@@ -114,6 +108,7 @@ void ServerManager::readRequest(int fd, Client &client)
 
 void ServerManager::sendResponce(int fd, Client &client)
 {
+
 	long bytesSent;
 	bytesSent = send(client.getSocket(), client.response.response_content.data(), client.response.response_content.size(), 0);
 	if ( bytesSent >= 0 &&

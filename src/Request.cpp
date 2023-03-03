@@ -1,13 +1,17 @@
 #include "Request.hpp"
 
 // Constructors
-Request::Request()
+Request::Request() :
+	parse_status(FIRST_LINE)
 {
 }
 
-Request::Request(const Request &copy)
+Request::Request(const Request &copy) :
+	parse_status(copy.parse_status),
+	buffer(copy.buffer),
+	method(copy.method),
+	serverName(copy.serverName)
 {
-	(void) copy;
 }
 
 
@@ -20,8 +24,14 @@ Request::~Request()
 // Operators
 Request & Request::operator=(const Request &assign)
 {
-	(void) assign;
-	return *this;
+		if (this != &assign)
+		{
+			this->parse_status = assign.parse_status;
+			this->buffer = assign.buffer;
+			this->method = assign.method;
+			this->serverName = assign.serverName;
+		}
+		return *this;
 }
 
 //TODO parsing the request
