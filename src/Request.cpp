@@ -24,6 +24,7 @@ Request & Request::operator=(const Request &assign)
 	return *this;
 }
 
+//TODO parsing the request
 int Request::parse(std::string &buffer)
 {
 	size_t error_lvl;

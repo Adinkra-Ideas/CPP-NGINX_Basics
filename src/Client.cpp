@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:12:03 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/03 11:38:27 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/03 19:18:13 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ Client::Client(const Client &copy) :
 {
 }
 
-Client::Client(ServerConfig &server)
+Client::Client(ft::Server &server)
 {
 	// this->request = NULL;
 	// this->response = NULL;
@@ -60,7 +60,7 @@ void	Client::setAddress(sockaddr_in &addr)
 {
 	this->client_address = addr;
 }
-void	Client::setServer(ServerConfig &server)
+void	Client::setServer(ft::Server &server)
 {
 	this->server = server;
 }
@@ -80,7 +80,7 @@ void Client::updateTime()
 {
 	this->time_of_last_msg = time(NULL);
 }
-ServerConfig Client::getServer()
+ft::Server Client::getServer()
 {
 	return (this->server);
 }
