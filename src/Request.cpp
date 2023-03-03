@@ -77,3 +77,13 @@ int Request::parse_chunks()
 	this->parse_status = COMPLETED;
 	return (0);
 }
+
+bool Request::parsingFinished()
+{
+	return (this->parse_status == COMPLETED);
+}
+
+std::string Request::getServerName()
+{
+	return (this->serverName);
+}

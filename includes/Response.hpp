@@ -3,7 +3,8 @@
 
 # include <iostream>
 # include <string>
-
+# include "Request.hpp"
+# include "ServerConfig.hpp"
 
 class Response
 {
@@ -17,9 +18,13 @@ class Response
 		
 		// Operators
 		Response & operator=(const Response &assign);
-		
+		void        setRequest(Request &request);
+        void        setServer(ServerConfig &server);
+		void		buildResponse();
+		std::string     response_content;
 	private:
-
+		Request			request;
+		ServerConfig	server;
 		
 };
 

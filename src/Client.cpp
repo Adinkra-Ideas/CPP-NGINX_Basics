@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:12:03 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/02 11:51:29 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/03 11:38:27 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,8 @@
 
 Client::Client()
 {
-	this->request = NULL;
-	this->response = NULL;
+	// this->request = NULL;
+	// this->response = NULL;
 }
 
 Client::Client(const Client &copy) :
@@ -30,8 +30,8 @@ Client::Client(const Client &copy) :
 
 Client::Client(ServerConfig &server)
 {
-	this->request = NULL;
-	this->response = NULL;
+	// this->request = NULL;
+	// this->response = NULL;
 	this->server = server;
 }
 
@@ -65,9 +65,28 @@ void	Client::setServer(ServerConfig &server)
 	this->server = server;
 }
 
-Request *Client::getRequest()
+Request Client::getRequest() const
 {
-	if (!this->request)
-		this->request = new Request();
 	return (this->request);
+}
+
+int	Client::getSocket()
+{
+	return (this->client_socket);
+}
+
+
+void Client::updateTime()
+{
+	this->time_of_last_msg = time(NULL);
+}
+ServerConfig Client::getServer()
+{
+	return (this->server);
+}
+
+void Client::buildResponse()
+{
+	this->response.setRequest(this->request);
+	this->response.buildResponse();
 }

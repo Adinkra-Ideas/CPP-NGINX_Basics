@@ -25,8 +25,12 @@ public:
 	int&				getListen_fd( void );
 	sockaddr_in&		getServer_address( void );
 	unsigned int&		getServer_address_len( void );
+
+	in_addr_t getHost();
+	uint16_t getPort();
 	void setHost(std::string host);
 	void setPort(std::string port);
+	std::string getServerName();
  private:
 	int						_listen_fd;
 	in_addr_t				_host;
@@ -35,7 +39,7 @@ public:
 	unsigned int			_server_address_len;
 	//TODO from server the varibales
 	// struct	sockaddr_in		_socketAddress;			// (MANDATORY) Choose the port and host of each ’server’
-	// std::string				_server_name;			// (OPTIONAL)	Set the server_names or not
+	std::string				_server_name;			// (OPTIONAL)	Set the server_names or not
 	// std::string				_root;					// (MANDATORY)	Define a directory or a file from where the returned file should be searched
 	// std::size_t				_client_max_body_size;	// (OPTIONAL)	Limit client body size
 	// std::string				_error_page;			// (MANDATORY)	Setup default error pages. 

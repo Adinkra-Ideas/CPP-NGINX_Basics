@@ -25,7 +25,8 @@ public:
 	void    runServers( void );
 	void acceptConnection(ServerConfig &server);
 	void readRequest(int fd, Client &client);
-	
+	void sendResponce(int fd, Client &client);
+	void    assign_server_for_response(Client &client);
 
 private:
 	std::vector<ServerConfig>	_servers;

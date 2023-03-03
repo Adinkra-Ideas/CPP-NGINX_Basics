@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:06:35 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/02 11:39:47 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/03 11:39:29 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,13 +30,22 @@ class Client
 		void	setSocket(int &fd);
         void	setAddress(sockaddr_in &addr);
         void	setServer(ServerConfig &server);
-		Request* getRequest();
+		ServerConfig getServer();
+		int	getSocket();
+		
+		void buildResponse();
+		Request getRequest() const;
+		void updateTime();
+		//TODO make request/response private?
+		Request request;
+		Response response;
 	private:
-		Request *request;
-		Response *response;
+		
+		
 		ServerConfig        server;
 		int	client_socket;
 		struct sockaddr_in client_address;
+		time_t			time_of_last_msg;
 		
 		
 };

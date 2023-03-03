@@ -34,7 +34,8 @@ class Request
 		// Operators
 		Request & operator=(const Request &assign);
 		int parse(std::string &buffer);
-
+		bool parsingFinished();
+		std::string getServerName();
 	private:
 		int first_line();
 		int parse_headers();
@@ -45,6 +46,8 @@ class Request
 		Status parse_status;
 		std::string buffer;
 		Method method;
+		std::string serverName;
+
 };
 
 #endif

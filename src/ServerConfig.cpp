@@ -70,3 +70,18 @@ void	ServerConfig::setupServer()
 		<< inet_ntoa(_server_address.sin_addr) << ":" <<
 		ntohs(_server_address.sin_port) << std::endl;
 }
+
+in_addr_t ServerConfig::getHost()
+{
+	return (this->_host);
+}
+
+uint16_t ServerConfig::getPort()
+{
+	return (this->_port);
+}
+
+std::string ServerConfig::getServerName()
+{
+	return (this->_server_name);
+}

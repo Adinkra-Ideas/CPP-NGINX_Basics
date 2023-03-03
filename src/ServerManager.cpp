@@ -61,11 +61,8 @@ void    ServerManager::runServers( void ) {
 				readRequest(i, this->connected_clients[i]);
 			else if (FD_ISSET(i, &write_fds_tmp) && this->connected_clients.count(i))
 			{
-				std::cout << " send response " << std::endl;
-					FD_CLR(i, &this->write_fds);
-					if(i == this->biggest_fd)
-						this->biggest_fd--;
-					this->connected_clients.erase(i);
+				sendResponce(i, this->connected_clients[i]);
+
 			}
 				
 
@@ -119,6 +116,7 @@ void    ServerManager::runServers( void ) {
 	
 }
 
+
 void ServerManager::acceptConnection(ServerConfig &server)
 {
 	std::cout << "------ New Outbound Connection "
@@ -143,13 +141,48 @@ void ServerManager::readRequest(int fd, Client &client)
 	int bytes_read;
 	bytes_read = read(fd, buffer, BUFFER_SIZE);
 	std::string request(buffer, bytes_read);
-	Request *req = client.getRequest();
-	req->parse(request);
-	FD_CLR(fd, &this->recive_fds);
+	client.updateTime();
+	client.request.parse(request);
+	if (client.request.parsingFinished())
+	{
+		assign_server_for_response(client);
+		client.buildResponse();
+		FD_CLR(fd, &this->recive_fds);
+		if(fd == this->biggest_fd)
+			this->biggest_fd--;
+		FD_SET(fd, &this->write_fds);
+		if (fd > this->biggest_fd)
+			this->biggest_fd = fd;
+	}
+
+}
+
+void ServerManager::sendResponce(int fd, Client &client)
+{
+	long bytesSent;
+	bytesSent = send(client.getSocket(), client.response.response_content.data(), client.response.response_content.size(), 0);
+	if ( bytesSent >= 0 &&
+			static_cast<long unsigned int>(bytesSent) == client.response.response_content.size() )
+			std::cout << "------ Server Response sent to client ------\n\n";
+	else
+		std::cout << "Error sending response to client";
+	FD_CLR(fd, &this->write_fds);
 	if(fd == this->biggest_fd)
 		this->biggest_fd--;
-	FD_SET(fd, &this->write_fds);
-	if (fd > this->biggest_fd)
-		this->biggest_fd = fd;
+	this->connected_clients.erase(fd);
+}
 
+void    ServerManager::assign_server_for_response(Client &client)
+{
+	for(std::vector<ServerConfig>::iterator it = this->_servers.begin(); it != this->_servers.end(); ++it)
+	{
+		if (client.getServer().getHost() == it->getHost() &&
+			client.getServer().getPort() == it->getPort() &&
+			client.request.getServerName() == it->getServerName()
+			)
+			{
+				client.setServer(*it);
+				break ;
+			}
+	}
 }
