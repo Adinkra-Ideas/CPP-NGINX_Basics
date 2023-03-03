@@ -2,21 +2,25 @@
 
 # include "ConfigParser.hpp"
 # include "ServerManager.hpp"
-# include "ServerConfig.hpp"
+# include "Server.hpp"
 
+//TODO error handling
+//TODO changing namespace?
+//TODO adding cgi
+//TODO adding timeout on connections
+//TODO adding a logger class?
 int main( int argc, char **argv )
 {
 
-	ConfigParser					cluster;
-	ServerManager					master;
-	if (argc == 1)
-		cluster.createCluster();
-	else if (argc == 2)
-		std::cout << argv[1] << std::endl;
-	else
-		exit(1);
+	typedef std::vector<ft::Server> vector_of_servers;
+	typedef ft::ConfigParser		parser_object;
+	if (argc != 2)
+		ft::exit_with_error("Not Enough CMD Parameters!");
 
-	master.setupServers(cluster.getServers());
+	vector_of_servers	servers;
+	parser_object		parser(servers, argv[1]);
+	ServerManager					master;
+	master.setupServers(servers);
 	master.runServers();
 	
 
