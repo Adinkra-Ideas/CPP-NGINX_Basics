@@ -1,8 +1,10 @@
 #ifndef REQUEST_HPP
 # define REQUEST_HPP
 
+# include "WebServer.hpp"
 # include <iostream>
 # include <string>
+# include <map>
 
 enum Status
 {
@@ -18,7 +20,19 @@ enum Status
 enum Method
 {
 	GET,
-	POST
+	POST,
+	DELETE
+};
+
+enum ErrorCode
+{
+	NONE,
+	BADREQUEST = 400,
+	UNAUTHORIZED = 401,
+	FORBIDDEN = 403,
+	NOTFOUND = 404,
+	METHODNOTALLOWED = 405,
+	NOTIMPLEMENTED = 501
 };
 
 class Request
@@ -45,8 +59,20 @@ class Request
 
 		Status parse_status;
 		std::string buffer;
-		Method method;
-		std::string serverName;
+		Method method;				//what kind of request: GET,POST, DELETE ...
+		std::string serverName;		//Name of the Server
+		std::string path;			// path of the target of the request
+		std::string query;			// query of the request
+		std::string protocol;		//protocol of the request, HTTP 1.1 for us
+		std::string request_body;	// the body part of the request
+		std::map<std::string, std::string> headers;	//place to story everything of the header, like Host, Chunk sending and so on
+		size_t	chunk_length; //length of the chunks
+		size_t	body_length; //length of the body
+		size_t	length;
+		struct timeval start_timer; //for timeout checking
+  		struct timeval last_timer;
+		ErrorCode error_code; //enum of the error codes
+
 
 };
 
