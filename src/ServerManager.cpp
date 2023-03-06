@@ -34,6 +34,7 @@ void    ServerManager::setupServers(std::vector<ft::Server> servers)
 	
 }
 
+//TODO timeout checker for clients
 void    ServerManager::runServers( void ) {
 	fd_set recive_fds_tmp;
 	fd_set write_fds_tmp;

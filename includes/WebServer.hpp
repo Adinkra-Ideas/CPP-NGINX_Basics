@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/25 13:17:10 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/03 19:32:56 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/06 14:53:45 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,8 @@
 # include <fcntl.h>
 # include <cstdlib>
 # include "Server.hpp"
+# include <sys/time.h>
 
 #define BUFFER_SIZE 65535
+#define EOL "\r\n"
 #endif
