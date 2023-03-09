@@ -27,6 +27,7 @@ enum Method
 enum ErrorCode
 {
 	NONE,
+	OK = 200,
 	BADREQUEST = 400,
 	UNAUTHORIZED = 401,
 	FORBIDDEN = 403,
@@ -50,13 +51,17 @@ class Request
 		int parse(std::string &buffer);
 		bool parsingFinished();
 		std::string getServerName();
-	private:
+		ErrorCode getErrorCode();
+		void clear();
+	//private:
 		int first_line();
 		int parse_headers();
 		int prepare_for_body();
 		int parse_body();
 		int parse_chunks();
-
+		void parseMethod(std::string str);
+		void parsePath(std::string str);
+		void parseProtocol(std::string str);
 		Status parse_status;
 		std::string buffer;
 		Method method;				//what kind of request: GET,POST, DELETE ...

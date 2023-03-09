@@ -90,9 +90,32 @@ void ServerManager::readRequest(int fd, Client &client)
 	char buffer[BUFFER_SIZE];
 	int bytes_read;
 	bytes_read = read(fd, buffer, BUFFER_SIZE);
+	if (bytes_read == 0)
+	{
+		std::cout << "nothing to read" << std::endl;
+		FD_CLR(fd, &this->recive_fds);
+		if(fd == this->biggest_fd)
+			this->biggest_fd--;
+		close(fd);
+		this->connected_clients.erase(fd);
+		return ;
+	}
+		
 	std::string request(buffer, bytes_read);
 	client.updateTime();
 	client.request.parse(request);
+	if (client.request.getErrorCode() != NONE)
+	{
+		std::cout << "Bad Request" << std::endl;
+		FD_CLR(fd, &this->recive_fds);
+		if(fd == this->biggest_fd)
+			this->biggest_fd--;
+		close(fd);
+		this->connected_clients.erase(fd);
+		return ;
+		//client.request.clear();
+	}
+		
 	if (client.request.parsingFinished())
 	{
 		assign_server_for_response(client);
@@ -120,6 +143,7 @@ void ServerManager::sendResponce(int fd, Client &client)
 	FD_CLR(fd, &this->write_fds);
 	if(fd == this->biggest_fd)
 		this->biggest_fd--;
+	close(fd);
 	this->connected_clients.erase(fd);
 }
 
