@@ -29,6 +29,7 @@ clean:
 				
 fclean:		clean
 			/bin/rm -f $(NAME)
+			clear
 
 re:			fclean	all
 

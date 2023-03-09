@@ -29,7 +29,7 @@ void Response::setRequest(Request &request)
 	this->request = request;
 }
 
-void Response::setServer(ft::Server &server)
+void Response::setServer(http::Server &server)
 {
 	this->server = server;
 }

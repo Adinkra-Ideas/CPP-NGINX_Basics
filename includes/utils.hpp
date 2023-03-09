@@ -12,7 +12,7 @@
 # include <cstdlib>
 # include <sstream>
 
-namespace ft {
+namespace http {
 
 	// **************** FUNCTIONS FOR PRINTING STATUS BEGINS ******************
 	void	exit_with_error(const std::string& msg);

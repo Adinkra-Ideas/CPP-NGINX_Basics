@@ -3,6 +3,7 @@
 # define __SERVER_HPP__
 
 # include <iostream>
+# include <sstream>
 # include <string>
 # include <vector>
 # include <fstream>
@@ -12,47 +13,47 @@
 
 # include "Location.hpp"
 # include "WebServer.hpp"
+# include "utils.hpp"
 
-namespace ft {
+namespace http {
 
 	class Server {
 	public:
+		// ****** Constructors and Destructor **********
 		Server( void );
 		~Server( void );
 		Server( const Server& other );
-		void	setupServer();
+		
+		// ************* Operators *********************
 		Server& operator= ( const Server& other );
 
+		// ************* Reading & Writing Operations **********
 		void				writePort(const int& port);
 		const int&			readPort( void );
-
 		void				writeIp(const std::string& listen);
 		const std::string&	readIp( void );
-
 		void				writeSockAddrLen(const unsigned int& port);
 		const unsigned int&	readSockAddrLen( void );
-
 		void				writeInSock(const int& fd);
 		const int&			readInSock( void );
-
 		void				writeOutSock(const int& fd);
 		const int&			readOutSock( void );
-
 		void				writeName(const std::string& name);
 		const std::string&	readName( void );
-
 		void				writeRoot(const std::string& root);
 		const std::string&	readRoot( void );
-
 		void				writeMaxBody(const std::string& max_body);
 		const std::string&	readMaxBody( void );
-
 		void				writeErrorPage(const std::string& error_page);
 		const std::string&	readErrorPage( void );
 
+		// ***** Returning Reference Address of Member Objects *********
 		std::vector<Location>&	refLocations( void );
-
 		struct	sockaddr_in&	refSockaddrs( void );
+
+		// ****** Initializing the Server  *******
+		void	bindServerSockAddr( void );
+		void	startListen( const int& max_queue );
 
 	private:		
 		int						_port;

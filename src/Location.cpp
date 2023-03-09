@@ -1,6 +1,6 @@
 # include "../includes/Location.hpp"
 
-namespace ft {
+namespace http {
 
 	Location::Location( void ) {}
 
@@ -14,7 +14,15 @@ namespace ft {
 	}
 
 	Location& Location::operator= ( const Location& other ) {
-		(void) other;
+		if (this != &other)
+		{
+			_path = other._path;
+			_methods = other._methods;
+			_root = other._root;
+			_index = other._index;
+			_autoindex = other._autoindex;
+			_exec = other._exec;
+		}
 		return *this;
 	}
 

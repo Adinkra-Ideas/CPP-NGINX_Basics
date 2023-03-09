@@ -19,12 +19,12 @@ class Response
 		// Operators
 		Response & operator=(const Response &assign);
 		void        setRequest(Request &request);
-        void        setServer(ft::Server &server);
+        void        setServer(http::Server &server);
 		void		buildResponse();
 		std::string     response_content;
 	private:
 		Request			request;
-		ft::Server	server;
+		http::Server	server;
 		
 };
 
