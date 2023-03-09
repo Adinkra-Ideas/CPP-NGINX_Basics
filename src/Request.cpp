@@ -81,35 +81,105 @@ int Request::parse(std::string &buffer)
 //TODO also check total length of the request
 int Request::first_line()
 {
+	//TODO more checks if line is ok
 	if (this->buffer.find(EOL) != std::string::npos)
 	{
-		//TODO parse method
-		this->method = GET;
-		//TODO check and parse path + query
-		this->path = "/";
-		//TODO check protocol
-		this->protocol = "HTTP/1.1";
+		size_t start = 0;
+		size_t end = this->buffer.find_first_of(" ", start);
+		parseMethod(this->buffer.substr(start, end));
+		if (this->error_code)
+			return (this->error_code);
+		start = end + 1;
+		end = this->buffer.find_first_of(" ", start);
+		parsePath(this->buffer.substr(start, end - start));
+		if (this->error_code)
+			return (this->error_code);
+		start = end + 1;
+		end = this->buffer.find_first_of(EOL, start);
+		parseProtocol(this->buffer.substr(start, end - start));
+		if (this->error_code)
+			return (this->error_code);
+		this->buffer.erase(0, end + 2);
 		this->parse_status = HEADERS;
+		return (this->error_code);
+	}
+	else
+	{
+		this->parse_status = COMPLETED;
+		this->error_code = BADREQUEST;
+		return (this->error_code);
 	}
 	
-	return (0);
+	
+}
+void Request::parseProtocol(std::string str)
+{
+	if (!str.compare("HTTP/1.1"))
+		this->protocol = "HTTP/1.1";
+	else
+		this->error_code = BADREQUEST;
 }
 
+void Request::parseMethod(std::string str)
+{
+	if (!str.compare("GET"))
+		this->method = GET;
+	else if (!str.compare("POST"))
+		this->method = POST;
+	else if (!str.compare("DELETE"))
+		this->method = DELETE;
+	else 
+		this->error_code = BADREQUEST;
+}
+
+void Request::parsePath(std::string str)
+{
+	if (str.at(0) != '/')
+		this->error_code = BADREQUEST;
+	else
+		this->path = str;
+	//TODO check more path and query
+}
 int Request::parse_headers()
 {
 	//TODO parse header for atleast Host
 	//TODO extra stuff to parse for: Transfer-Encoding, Content-Length, Connection
-	this->headers["Host"] = "127.0.0.1:7655";
+	size_t start = 0;
+	size_t end = this->buffer.find_first_of(EOL, start);
+	size_t delimiter;
+	std::string key;
+	std::string value;
+
+	while (end != std::string::npos)
+	{
+		if(this->buffer.find_first_of(EOL, start) == start)
+			break ;
+		delimiter = this->buffer.find_first_of(':', start);
+		key = this->buffer.substr(start, delimiter - start);
+		value = this->buffer.substr(delimiter + 2, end - delimiter - 2);
+		this->headers[key] = value;
+		start = end + 2;
+		end = this->buffer.find_first_of(EOL, start);
+	}
+	buffer.erase(0, end + 2);
 	this->parse_status = PREBODY;
-	return (0);
+	return (this->error_code);
 }
 
 int Request::prepare_for_body()
 {
 	//TODO check if header is ok
 	//TODO prepare chunk receiving
-	this->parse_status = BODY;
-	return (0);
+	if (this->headers.find("Host") == this->headers.end() || this->headers["Host"].empty())
+	{
+		this->error_code = BADREQUEST;
+		this->parse_status = COMPLETED;
+	}
+	else
+	{
+		this->parse_status = COMPLETED;
+	}
+	return (this->error_code);
 }
 
 int Request::parse_body()
@@ -134,4 +204,16 @@ bool Request::parsingFinished()
 std::string Request::getServerName()
 {
 	return (this->serverName);
+}
+
+ErrorCode Request::getErrorCode()
+{
+	return (this->error_code);
+}
+
+void Request::clear()
+{
+	this->error_code = NONE;
+	this->parse_status = FIRST_LINE;
+	this->buffer.clear();
 }
