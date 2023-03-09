@@ -13,18 +13,14 @@
 //TODO checking leaks
 int main( int argc, char **argv )
 {
-	typedef std::vector<http::Server> vector_of_servers;
-	typedef http::ConfigParser		parser_object;
+	http::ServerManager				master;
 
 	if (argc != 2)
 		http::exit_with_error("Not Enough CMD Parameters!");
 
-	vector_of_servers				servers;
-	parser_object					parser(servers, argv[1]);
-	http::ServerManager				master;
-	master.setupServers(servers);			// servermanager is creating a duplicate instance of servers
+	master.parseConfig(argv[1]);	
+	master.setupServers();
 	master.runServers();
-	
 
 	return (0);
 }

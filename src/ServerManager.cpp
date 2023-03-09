@@ -18,11 +18,22 @@ namespace http {
 		return *this;
 	}
 
-	//TODO getting also all the FD and bindings
-	void    ServerManager::setupServers(std::vector<http::Server> servers)
-	{
-		this->_servers = servers;
+	// ****************	CONSTRUCTORS && OPERATORS ENDS	**********************
+	//////////////////////////////////////////////////////////////////////////
+	// ***********	Managing the Servers Methods BEGINS		******************
 
+	// **********************************************
+	// Calls the http::ConfigParser object AKA		*
+	// parser_function_object to parse the config	*
+	// filepath being dereferenced by path pointer	*
+	// **********************************************
+	void	ServerManager::parseConfig( const char *path ) {
+		parser_function_object	parser(_servers, path);
+	}
+
+	//TODO getting also all the FD and bindings
+	void    ServerManager::setupServers( void )
+	{
 		for (std::vector<http::Server>::iterator iter = this->_servers.begin(); iter != this->_servers.end(); iter++)
 		{
 			iter->bindServerSockAddr();
