@@ -6,7 +6,7 @@
 /*   By: euyi <euyi@student.42wolfsburg.de>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:12:03 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/09 19:27:18 by euyi             ###   ########.fr       */
+/*   Updated: 2023/03/11 17:13:19 by euyi             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,7 @@ void Client::updateTime()
 {
 	this->time_of_last_msg = time(NULL);
 }
-http::Server Client::getServer()
+http::Server& Client::getServer()
 {
 	return (this->server);
 }

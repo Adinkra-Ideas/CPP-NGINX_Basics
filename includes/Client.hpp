@@ -6,7 +6,7 @@
 /*   By: euyi <euyi@student.42wolfsburg.de>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:06:35 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/09 19:25:39 by euyi             ###   ########.fr       */
+/*   Updated: 2023/03/11 16:51:32 by euyi             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,11 +28,11 @@ class Client
 		Client &operator=(const Client &assign);
 		~Client();
 
-		void	setSocket(int &fd);
-        void	setAddress(sockaddr_in &addr);
-        void	setServer(http::Server &server);
-		http::Server getServer();
-		int	getSocket();
+		void			setSocket(int &fd);
+        void			setAddress(sockaddr_in &addr);
+        void			setServer(http::Server &server);
+		http::Server& 	getServer();
+		int				getSocket();
 		
 		void buildResponse();
 		Request getRequest() const;
@@ -41,8 +41,8 @@ class Client
 		Request request;
 		Response response;
 	private:		
-		http::Server        server;
-		int	client_socket;
+		http::Server        server;				// Stores the Server that this client is connected to
+		int					client_socket;		// Stores the outbound socked address FD where data intended for this client will be written
 		struct sockaddr_in client_address;
 		time_t			time_of_last_msg;
 		

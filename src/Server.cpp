@@ -2,13 +2,13 @@
 
 namespace http {
 	Server::Server( void ) : _port(), _ip(), _sockAddrs(), _sockAddrs_len(),
-						 _in_sock(), _out_sock(), _name(), _root(),
+						 _in_sock(), _name(), _root(),
 						 _max_body(), _error_page(), _locations() {}
 
 	Server::~Server( void ) {}
 
 	Server::Server( const Server& other ) : _port(other._port), _ip(other._ip),
-						_sockAddrs(), _sockAddrs_len(), _in_sock(), _out_sock(),
+						_sockAddrs(), _sockAddrs_len(), _in_sock(),
 						_name(other._name), _root(other._root), _max_body(other._max_body),
 						_error_page(other._error_page), _locations(other._locations){
 		_sockAddrs.sin_family = other._sockAddrs.sin_family;
@@ -25,7 +25,6 @@ namespace http {
 			this->_sockAddrs = other._sockAddrs;
 			this->_sockAddrs_len = other._sockAddrs_len;
 			this->_in_sock = other._in_sock;
-			this->_out_sock = other._out_sock;
 			this->_name = other._name;
 			this->_root = other._root;
 			this->_max_body = other._max_body;
@@ -49,9 +48,6 @@ namespace http {
 
 	void	Server::writeInSock(const int& fd) { _in_sock = fd; }
 	const int&	Server::readInSock( void ) { return _in_sock; }
-
-	void	Server::writeOutSock(const int& fd) { _out_sock = fd; }
-	const int&	Server::readOutSock( void ) { return _out_sock; }
 
 	void	Server::writeName(const std::string& name) { _name = name; }
 	const std::string&	Server::readName( void ) { return _name; }
@@ -105,7 +101,7 @@ namespace http {
 	// Starts listen() for our socket address FD stored	*
 	// already in _in_sock								*
 	// **************************************************
-	void	Server::startListen( const int& max_queue ) {
+	void	Server::startListen( const int& max_queue) {
 		std::ostringstream msg;
 
 		if ( listen(_in_sock, max_queue) ) {

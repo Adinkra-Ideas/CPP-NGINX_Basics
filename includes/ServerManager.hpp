@@ -9,7 +9,9 @@
 
 # include <map>
 # include <vector>
-class Server;
+# include <sstream>
+# include <errno.h>
+// class Server;
 
 // Max Queue used By listen()
 # define MAX_QUEUE 512
@@ -20,7 +22,6 @@ namespace http {
 	//starts and runs the servers
 	class ServerManager {
 	public:
-		typedef std::vector<http::Server> vector_of_servers;
 		typedef http::ConfigParser parser_function_object;
 
 		// ****** Constructors and Destructor **********
@@ -35,18 +36,17 @@ namespace http {
 		void	parseConfig( const char *path );
 		void    setupServers( void );
 		void    runServers( void );
-		void	acceptConnection(http::Server &server);
+		void	acceptConnection(fd_set& rcvd_fds_tmp, http::Server &server);
 		void	readRequest(int fd, Client &client);
 		void	sendResponce(int fd, Client &client);
 		void    assign_server_for_response(Client &client);
 
 	private:
-		vector_of_servers			_servers;
-
-		fd_set 						recive_fds;
-		fd_set 						write_fds;
-		int 						biggest_fd;
-		std::map<int, http::Server> 	running_servers;
+		std::vector<http::Server>		_servers;			// Each element in this _servers vector holds a server config
+		fd_set 							_received_fds;		// For each Server config stored in _servers vector, the socket Address FD is added to this FD sets
+		fd_set 							_write_fds;
+		int 							_biggest_fd;		// stores the FD of _running_servers with the greatest value
+		std::map<int, http::Server> 	_running_servers;	// mapped as foreach Running Server (Server._in_sock=>Server)
 		std::map<int, Client> 		connected_clients;
 	};
 

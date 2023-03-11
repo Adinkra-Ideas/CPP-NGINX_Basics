@@ -62,7 +62,6 @@ namespace http {
 		unsigned int			_sockAddrs_len;			// Stores the sizeof(_sockAddrs)
 
 		int						_in_sock;				// for storing listening socket
-		int						_out_sock;				// for storing client socket used for establishing outbound traffic to client
 
 		std::string				_name;					// (OPTIONAL)	Set the server_names or not
 		std::string				_root;					// (MANDATORY)	Define a directory or a file from where the returned file should be searched
