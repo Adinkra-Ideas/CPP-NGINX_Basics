@@ -110,7 +110,7 @@ namespace http {
 				// but here, first i is server FD while second i is client FD. How possible?
 				// else if ( FD_ISSET(i, &_received_fds_tmp) && this->connected_clients.count(i) )
 				else if ( FD_ISSET(i, &_received_fds_tmp) && this->connected_clients.count(i) )
-					readRequest(i, this->connected_clients[i]); // here
+					readRequest(i, this->connected_clients[i]);
 				
 				// We're here. But first, we need to complete understanding what's going on in readRequest(). the request and response objects
 				else if (FD_ISSET(i, &_write_fds_tmp) && this->connected_clients.count(i))
@@ -190,22 +190,22 @@ namespace http {
 
 		if (bytes_read == 0)
 		{
-			print_status(ft_GREEN, "Client's Request Processed Successfully!");
+			print_status(ft_GREEN, "Nothing to Read!");
 			if(fd == this->_biggest_fd)
 				this->_biggest_fd--;
 			close(fd);
 			this->connected_clients.erase(fd);
 			return ;
 		}
-		
-		// Here
-		std::string request(buffer, bytes_read);
+
+		std::string request(buffer);
+		std::cout << "Client header : \n" << buffer << std::endl;
+
 		client.updateTime();
 		client.request.parse(request);
-		if (client.request.getErrorCode() != NONE)
+		if (client.request.getErrorCode() != NONE) // All Mandatory arguments were not present in request header
 		{
 			std::cout << "Bad Request" << std::endl;
-			// FD_CLR(fd, &this->_received_fds);
 			if(fd == this->_biggest_fd)
 				this->_biggest_fd--;
 			close(fd);
@@ -214,11 +214,10 @@ namespace http {
 			//client.request.clear();
 		}
 			
-		if (client.request.parsingFinished())
+		if (client.request.parsingFinished()) // All 
 		{
-			assign_server_for_response(client);
-			client.buildResponse();
-			// FD_CLR(fd, &this->_received_fds);
+			assign_server_for_response(client); // I think this is a duplicate action. i might be wrong though
+			client.buildResponse(); //here
 			if(fd == this->_biggest_fd)
 				this->_biggest_fd--;
 			FD_SET(fd, &this->_write_fds);
@@ -245,7 +244,7 @@ namespace http {
 		this->connected_clients.erase(fd);
 	}
 
-	void    ServerManager::assign_server_for_response(Client &client)
+	void    ServerManager::assign_server_for_response(Client &client) // I thought the processing server has previously being assigned to this client.server() at the point of declaration in acceptConnection()?
 	{
 		for(std::vector<http::Server>::iterator it = this->_servers.begin(); it != this->_servers.end(); ++it)
 		{
@@ -254,7 +253,7 @@ namespace http {
 				client.request.getServerName() == it->readName()
 				)
 				{
-					client.setServer(*it);
+					client.setServer(*it); 
 					break ;
 				}
 		}

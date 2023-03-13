@@ -6,7 +6,7 @@
 /*   By: euyi <euyi@student.42wolfsburg.de>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:06:35 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/11 16:51:32 by euyi             ###   ########.fr       */
+/*   Updated: 2023/03/13 19:35:20 by euyi             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,12 +39,12 @@ class Client
 		void updateTime();
 		//TODO make request/response private?
 		Request request;
-		Response response;
+		Response response;					// This object receives the parsed requestHeader object through its method response.setRequest(request)
 	private:		
 		http::Server        server;				// Stores the Server that this client is connected to
 		int					client_socket;		// Stores the outbound socked address FD where data intended for this client will be written
-		struct sockaddr_in client_address;
-		time_t			time_of_last_msg;
+		struct sockaddr_in client_address;		// socket address created for client using accept()
+		time_t			time_of_last_msg;		// Stores time when server received this client's request
 		
 		
 };

@@ -36,6 +36,7 @@ enum ErrorCode
 	NOTIMPLEMENTED = 501
 };
 
+// Class that stores the httpRequest data of a client
 class Request
 {
 	public:
