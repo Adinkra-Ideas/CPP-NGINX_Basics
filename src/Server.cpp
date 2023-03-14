@@ -1,15 +1,14 @@
 # include "../includes/Server.hpp"
 
-namespace ft {
-
+namespace http {
 	Server::Server( void ) : _port(), _ip(), _sockAddrs(), _sockAddrs_len(),
-						 _in_sock(), _out_sock(), _name(), _root(),
+						 _in_sock(), _name(), _root(),
 						 _max_body(), _error_page(), _locations() {}
 
 	Server::~Server( void ) {}
 
 	Server::Server( const Server& other ) : _port(other._port), _ip(other._ip),
-						_sockAddrs(), _sockAddrs_len(), _in_sock(), _out_sock(),
+						_sockAddrs(), _sockAddrs_len(), _in_sock(),
 						_name(other._name), _root(other._root), _max_body(other._max_body),
 						_error_page(other._error_page), _locations(other._locations){
 		_sockAddrs.sin_family = other._sockAddrs.sin_family;
@@ -26,7 +25,6 @@ namespace ft {
 			this->_sockAddrs = other._sockAddrs;
 			this->_sockAddrs_len = other._sockAddrs_len;
 			this->_in_sock = other._in_sock;
-			this->_out_sock = other._out_sock;
 			this->_name = other._name;
 			this->_root = other._root;
 			this->_max_body = other._max_body;
@@ -38,7 +36,7 @@ namespace ft {
 
 	// ****************	CONSTRUCTORS && OPERATORS ENDS	**********************
 	//////////////////////////////////////////////////////////////////////////
-	// ******************* 		METHODS BEGINS			**********************
+	// ***********		READING AND WRITING METHODS BEGINS********************
 	void	Server::writePort(const int& port) { _port = port; }
 	const int&	Server::readPort( void ) { return _port; }
 
@@ -50,9 +48,6 @@ namespace ft {
 
 	void	Server::writeInSock(const int& fd) { _in_sock = fd; }
 	const int&	Server::readInSock( void ) { return _in_sock; }
-
-	void	Server::writeOutSock(const int& fd) { _out_sock = fd; }
-	const int&	Server::readOutSock( void ) { return _out_sock; }
 
 	void	Server::writeName(const std::string& name) { _name = name; }
 	const std::string&	Server::readName( void ) { return _name; }
@@ -66,34 +61,60 @@ namespace ft {
 	void	Server::writeErrorPage(const std::string& error_page) { _error_page = error_page; }
 	const std::string&	Server::readErrorPage( void ) { return _error_page; }
 
+	// ***********		READING AND WRITING METHODS ENDS *********************
+	//////////////////////////////////////////////////////////////////////////
+	// **** 	Returning Reference Address of Member Objects Begins	******
 	std::vector<Location>& Server::refLocations( void ) { return _locations; }
 
 	struct	sockaddr_in& Server::refSockaddrs( void ) { return _sockAddrs; }
 
-	void	Server::setupServer()
-{
-	if ( (_in_sock = socket(AF_INET, SOCK_STREAM, 0) )  == -1 ) {
-		//log error msg
-		
-		exit(1);
+	// **** 	Returning Reference Address of Member Objects Ends	******
+	//////////////////////////////////////////////////////////////////////
+	// ***********		Initializing the Server Begins 		**************
+
+	// **************************************************
+	// Creates a socket and store the FD to _in_sock	*
+	// If successful, Bind() the _in_sock to _sockAddrs	*
+	// which already has the IP:HOST stored				*
+	// **************************************************
+	void	Server::bindServerSockAddr() {
+		std::ostringstream msg;
+
+		if ( (_in_sock = socket(AF_INET, SOCK_STREAM, 0) )  == -1 ) {
+			msg << "Cannot create socket for host " << _ip;
+			exit_with_error(msg.str());
+		}
+
+		if (bind(_in_sock, (struct sockaddr *)&_sockAddrs, _sockAddrs_len) == -1) {
+			msg << "bind went wrong for host " << _ip;
+			exit_with_error(msg.str());
+		}
+
+		msg << "Socket FD " << _in_sock
+			<< " bounded successfully with Socket Address "
+			<< inet_ntoa(_sockAddrs.sin_addr) << ":"
+			<< ntohs(_sockAddrs.sin_port);
+		print_status(ft_GREEN, msg.str());
 	}
-	// memset(&_server_address, 0, sizeof(_server_address));
-	// _server_address.sin_family = AF_INET;
-	// _server_address.sin_port = htons(this->_port);
-	// _server_address.sin_addr.s_addr = this->_host;
 
-	if (bind(_in_sock, (struct sockaddr *)&_sockAddrs, _sockAddrs_len) == -1)
-    {
-		std::cout << "bind went wrong ..." <<std::endl;
+	// **************************************************
+	// Starts listen() for our socket address FD stored	*
+	// already in _in_sock								*
+	// **************************************************
+	void	Server::startListen( const int& max_queue) {
+		std::ostringstream msg;
 
-        exit(1);
-    }
+		if ( listen(_in_sock, max_queue) ) {
+			msg << "Socket listening on Sock FD " << _in_sock
+				<< " failed";
+			exit_with_error(msg.str());
+		}
 
-	// Check data stored in Socket Address
-	std::cout << "\nSocket FD " << _in_sock <<
-		" bounded successfully with Socket Address "
-		<< inet_ntoa(_sockAddrs.sin_addr) << ":" <<
-		ntohs(_sockAddrs.sin_port) << std::endl;
-}
+		msg << "Socket Address " << inet_ntoa(_sockAddrs.sin_addr)
+			<< ":" << ntohs(_sockAddrs.sin_port) << " With FD "
+			<< _in_sock << " is Now Listening! (Max Queue == "
+			<< max_queue << ")" ;
+		print_status(ft_GREEN, msg.str());
+	}
 
 }	// namespace ft

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
+/*   By: euyi <euyi@student.42wolfsburg.de>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:12:03 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/03 20:39:02 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/13 19:39:14 by euyi             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ Client::Client(const Client &copy) :
 {
 }
 
-Client::Client(ft::Server &server)
+Client::Client(http::Server &server)
 {
 	// this->request = NULL;
 	// this->response = NULL;
@@ -61,7 +61,7 @@ void	Client::setAddress(sockaddr_in &addr)
 {
 	this->client_address = addr;
 }
-void	Client::setServer(ft::Server &server)
+void	Client::setServer(http::Server &server)
 {
 	this->server = server;
 }
@@ -81,13 +81,13 @@ void Client::updateTime()
 {
 	this->time_of_last_msg = time(NULL);
 }
-ft::Server Client::getServer()
+http::Server& Client::getServer()
 {
 	return (this->server);
 }
 
-void Client::buildResponse()
+void Client::buildResponse() // construct a dynamic http Header response for this client
 {
-	this->response.setRequest(this->request);
-	this->response.buildResponse();
+	this->response.setRequest(this->request); // copying request to client
+	this->response.buildResponse();				//here
 }

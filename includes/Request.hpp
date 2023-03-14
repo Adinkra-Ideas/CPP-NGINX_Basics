@@ -36,6 +36,7 @@ enum ErrorCode
 	NOTIMPLEMENTED = 501
 };
 
+// Class that stores the httpRequest data of a client
 class Request
 {
 	public:
@@ -77,8 +78,6 @@ class Request
 		struct timeval start_timer; //for timeout checking
   		struct timeval last_timer;
 		ErrorCode error_code; //enum of the error codes
-
-
 };
 
 #endif

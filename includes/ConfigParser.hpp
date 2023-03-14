@@ -2,7 +2,7 @@
 #ifndef __CONFIGPARSER_HPP__
 # define __CONFIGPARSER_HPP__
 
-// Max value for a localhost port number == max 16 bit int (65535)
+// Max value for a localhost port number == max 16 bit int value (65535)
 # define MAX_16_BIT 65535
 
 // Minimum len for a local IP is 7 chars (0.0.0.0)
@@ -18,7 +18,7 @@
 # include "Location.hpp"
 # include "utils.hpp"
 
-namespace ft {
+namespace http {
 
 	class ConfigParser {
 	public:
