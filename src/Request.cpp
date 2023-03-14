@@ -141,8 +141,29 @@ void Request::parsePath(std::string str)
 	else
 		this->path = str;
 	//TODO check more path and query
+=======
 }
 
+void Request::parseMethod(std::string str)
+{
+	if (!str.compare("GET"))
+		this->method = GET;
+	else if (!str.compare("POST"))
+		this->method = POST;
+	else if (!str.compare("DELETE"))
+		this->method = DELETE;
+	else 
+		this->error_code = BADREQUEST;
+}
+
+void Request::parsePath(std::string str)
+{
+	if (str.at(0) != '/')
+		this->error_code = BADREQUEST;
+	else
+		this->path = str;
+	//TODO check more path and query
+}
 int Request::parse_headers()
 {
 	//TODO parse header for atleast Host
