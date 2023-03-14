@@ -58,6 +58,20 @@ Request & Request::operator=(const Request &assign)
 		return *this;
 }
 
+	// ****************	CONSTRUCTORS && OPERATORS ENDS	**********************
+	//////////////////////////////////////////////////////////////////////////
+	// ***********	READING AND WRITING METHODS BEGINS	  ********************
+
+// Returns the content of the _protocol (AKA HTTP Version)
+const std::string&	Request::readProtocol( void ) { return protocol; }
+
+// Returns the content of the _method (AKA GET, POST, or DELETE)
+const Method&	Request::readMethod( void ) { return method; }
+
+	// ************	READING AND WRITING METHODS ENDS	**********************
+	//////////////////////////////////////////////////////////////////////////
+	// ***********	XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX BEGINS********************
+
 //TODO parsing the request
 int Request::parse(std::string &buffer)
 {
