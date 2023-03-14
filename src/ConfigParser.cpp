@@ -1,6 +1,6 @@
 # include "../includes/ConfigParser.hpp"
 
-namespace ft {
+namespace http {
 
 	ConfigParser::ConfigParser( void ) {}
 
@@ -37,7 +37,7 @@ namespace ft {
 		fin.open(path);
 
 		if ( ! fin.good() )
-			exit_with_error("Failed To Read From User-Submitted Config Filepath");
+			exit_with_error("Failed To Read From User-Submitted Config Filepath"); //here
 
 		print_status(ft_GREEN, "Config File Opened Successfully!");
 		print_status(ft_YELLOW, "Now Parsing Config File...");

@@ -65,6 +65,8 @@ int Request::parse(std::string &buffer)
 	this->buffer += buffer;
 	buffer.clear();
 
+	// parse_status is set to FIRST_LINE as set by request def construc from client.hpp
+	// then if first line of client request was parsed successfully, parse_status is set to HEADERS
 	if (parse_status == FIRST_LINE)
 		error_lvl = first_line();
 	if (parse_status == HEADERS)
@@ -73,7 +75,7 @@ int Request::parse(std::string &buffer)
 		error_lvl = prepare_for_body();
 	if (parse_status == BODY)
 		error_lvl = parse_body();
-	if (parse_status == CHUNK)
+	if (parse_status == CHUNK)			// what does chunk do/mean?
 		error_lvl = parse_chunks();
 	return (error_lvl);
 }
@@ -82,11 +84,11 @@ int Request::parse(std::string &buffer)
 int Request::first_line()
 {
 	//TODO more checks if line is ok
-	if (this->buffer.find(EOL) != std::string::npos)
+	if (this->buffer.find(EOL) != std::string::npos)   // EOL == '\n'
 	{
 		size_t start = 0;
 		size_t end = this->buffer.find_first_of(" ", start);
-		parseMethod(this->buffer.substr(start, end));
+		parseMethod(this->buffer.substr(start, end)); //here
 		if (this->error_code)
 			return (this->error_code);
 		start = end + 1;
@@ -140,6 +142,7 @@ void Request::parsePath(std::string str)
 		this->path = str;
 	//TODO check more path and query
 }
+
 int Request::parse_headers()
 {
 	//TODO parse header for atleast Host
@@ -150,6 +153,8 @@ int Request::parse_headers()
 	std::string key;
 	std::string value;
 
+	// copy all the lines below line one from request Header
+	// to a map of Name=>Value
 	while (end != std::string::npos)
 	{
 		if(this->buffer.find_first_of(EOL, start) == start)
@@ -157,10 +162,14 @@ int Request::parse_headers()
 		delimiter = this->buffer.find_first_of(':', start);
 		key = this->buffer.substr(start, delimiter - start);
 		value = this->buffer.substr(delimiter + 2, end - delimiter - 2);
-		this->headers[key] = value;
+		this->headers[key] = value;				// we need to print out what'S stored in headers map object
 		start = end + 2;
 		end = this->buffer.find_first_of(EOL, start);
 	}
+	// std::cout << "map header holds: \n";
+	// for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it )
+	// 	std::cout << "Key= " << (it->first) << " value= " << (it->second) << std::endl;
+
 	buffer.erase(0, end + 2);
 	this->parse_status = PREBODY;
 	return (this->error_code);
@@ -180,8 +189,19 @@ int Request::prepare_for_body()
 		this->parse_status = COMPLETED;
 	}
 	return (this->error_code);
+	if (this->headers.find("Host") == this->headers.end() || this->headers["Host"].empty())
+	{
+		this->error_code = BADREQUEST;
+		this->parse_status = COMPLETED;
+	}
+	else
+	{
+		this->parse_status = COMPLETED;
+	}
+	return (this->error_code);
 }
 
+// how to get request body?
 int Request::parse_body()
 {
 	//TODO check and get request body
@@ -196,7 +216,7 @@ int Request::parse_chunks()
 	return (0);
 }
 
-bool Request::parsingFinished()
+bool Request::parsingFinished()				// I dont fully understand the idea behind this
 {
 	return (this->parse_status == COMPLETED);
 }
