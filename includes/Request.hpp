@@ -54,6 +54,10 @@ class Request
 		std::string getServerName();
 		ErrorCode getErrorCode();
 		void clear();
+
+		const std::string&	readProtocol( void );
+		const Method&		readMethod( void );
+
 	//private:
 		int first_line();
 		int parse_headers();
