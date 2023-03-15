@@ -17,6 +17,7 @@ namespace http {
 	// **************** FUNCTIONS FOR PRINTING STATUS BEGINS ******************
 	void	exit_with_error(const std::string& msg);
 	void	print_status(const char *color, const std::string& msg);
+	std::string getCurrentTime();
 
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
 

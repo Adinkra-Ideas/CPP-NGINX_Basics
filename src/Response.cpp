@@ -26,12 +26,12 @@ Response & Response::operator=(const Response &assign)
 
 void Response::setRequest(Request &request)
 {
-	this->request = request;
+	_request = request;
 }
 
 void Response::setServer(http::Server &server)
 {
-	this->server = server;
+	_server = &server;
 }
 
 //TODO building the response
@@ -40,20 +40,20 @@ void Response::buildResponse( void )
 	std::ostringstream	tmp;
 	ErrorCode			status_code = NONE;
 
-	// Using the right Method to process requested filepath
-	if ( request.readMethod() == GET )
+	// Using the right Method to process _requested filepath
+	if ( _request.readMethod() == GET )
 		status_code = processGetRequest(_requested_file);
-	// else if ( request.readMethod() == POST )
+	// else if ( _request.readMethod() == POST )
 	// 	status_code = processPostRequest();
-	// else if ( request.readMethod() == DELETE )
+	// else if ( _request.readMethod() == DELETE )
 	// 	status_code = processDeleteRequest();
 
 	// Add httpResponse status line to stream z.B [HTTP/1.1 200 OK]
 	// Add content-type to stream z.B [Content-Type: text/html]
-	tmp << request.readProtocol() << " "
+	tmp << _request.readProtocol() << " "
 		<< status_code << " "
 		<< translateErrorCode(status_code) << "\n"
-		<< "Content-Type: " << getContentType(_requested_file) << " \n"  ;
+		<< "Content-Type: " << getContentType(_requested_file, status_code) << " \n"  ;
 	
 	// The below path will be changed to dynamic after we've built requested filepath
 	// in the _requested_file string object
@@ -64,12 +64,52 @@ void Response::buildResponse( void )
 	this->response_content = tmp.str();
 }
 
-ErrorCode	Response::processGetRequest( std::string& requested_file ) {
+ErrorCode	Response::processGetRequest( std::string& requested_file) {
+	std::string		dir_tmp;
+	std::string		file_name_tmp;
+	std::size_t		pos;
+
+	dir_tmp = _request.readPath();
+
+	// If http request is requesting a path to a file, split
+	// the directory from path. Store directory to dir_tmp and
+	// filename to file_name_tmp
+	if ( (pos = dir_tmp.find_last_of('.')) != std::string::npos ) {
+		if ( (pos = dir_tmp.find_last_of('/', pos - 1)) != std::string::npos ) {
+			file_name_tmp = dir_tmp.substr(pos + 1);
+			dir_tmp.erase(pos + 1);
+		} else {
+			return NONE;	// This return value is a placeholder. Might be subject to change later on
+		}	
+	}
+
+	// checking if dir_tmp is an existing Location context in _server
+	std::vector<http::Location>::iterator it = _server->refLocations().begin();
+	for ( ; it != _server->refLocations().end(); ++it )
+		if ( ! it->readPath().compare(dir_tmp) )
+			break ;
+
+	if ( it == _server->refLocations().end() )
+		return NOTFOUND;
+	else {
+		_requested_file.insert(0, it->readRoot());
+		// continue from here
+		std::cout << "tested " << _requested_file << std::endl;
+	}
+
 
 	// This is just a dummy sentence to add a temporary filepath in _requested_file for the meantime.
 	// Ideally we will retrieve the file pathe requested from client, compare
 	// against server config to determine how the filepath will be constructed
 	requested_file.insert(0, "home/dummyfile.html" );
+
+	// retrieve path from client request file and split-store to a path_tmp and extension_tmp // done
+	// search for thepath among location // done
+	// if found, enter the location and build _filepath using the location->root + path_tmp + (extension_tmp or location->index)
+	// test reading from filepath using reading stream
+	// if reading stream ok, we set function to return 200, and read from the reading stream into a pipe
+	// but if reading stream failed, set error code to status accordingly
+
 
 	// The return value below is also a dummy. 
 	// will continue from this function tomorrow.
@@ -85,9 +125,14 @@ ErrorCode	Response::processGetRequest( std::string& requested_file ) {
 // Body. Return Value is the appropriate browser compatible 	*
 // content-type.												*
 // **************************************************************
-std::string	Response::getContentType( const std::string& requested_file ) {
+std::string	Response::getContentType( const std::string& requested_file, const ErrorCode& status ) {
 	std::string		tmp;
 	std::size_t		pos;
+
+	if ( status == NOTFOUND )  {// or other unknown conditions
+		tmp.insert( 0, "text/html" );
+		return tmp;
+	}
 
 	// Getting file extension stored to tmp
 	if ( (pos = requested_file.find_last_of('.')) != std::string::npos )

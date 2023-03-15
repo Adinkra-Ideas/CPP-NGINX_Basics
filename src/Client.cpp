@@ -6,7 +6,7 @@
 /*   By: euyi <euyi@student.42wolfsburg.de>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:12:03 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/13 19:39:14 by euyi             ###   ########.fr       */
+/*   Updated: 2023/03/15 19:28:58 by euyi             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,5 +89,6 @@ http::Server& Client::getServer()
 void Client::buildResponse() // construct a dynamic http Header response for this client
 {
 	this->response.setRequest(this->request); // copying request to client
+	this->response.setServer(this->server);
 	this->response.buildResponse();				//here
 }

@@ -6,7 +6,6 @@
 # include "WebServer.hpp"
 # include "Server.hpp"
 # include "Client.hpp"
-# include "utils.hpp"
 
 # include <map>
 # include <vector>
@@ -37,7 +36,7 @@ namespace http {
 		void	parseConfig( const char *path );
 		void    setupServers( void );
 		void    runServers( void );
-		void	acceptConnection(fd_set& rcvd_fds_tmp, http::Server &server);
+		void	acceptConnection(http::Server &server);
 		void	readRequest(int fd, Client &client);
 		void	sendResponce(int fd, Client &client);
 		void    assign_server_for_response(Client &client);
@@ -49,6 +48,9 @@ namespace http {
 		int 							_biggest_fd;		// stores the FD of _running_servers with the greatest value
 		std::map<int, http::Server> 	_running_servers;	// mapped as foreach Running Server (Server._in_sock=>Server)
 		std::map<int, Client> 		connected_clients;
+
+		void addFDToSet(const int fd, fd_set &set);
+		void removeFDToSet(const int fd, fd_set &set);
 	};
 
 } // namespace ft

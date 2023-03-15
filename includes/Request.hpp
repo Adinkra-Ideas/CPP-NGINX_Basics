@@ -56,6 +56,7 @@ class Request
 		void clear();
 
 		const std::string&	readProtocol( void );
+		const std::string&	readPath( void );
 		const Method&		readMethod( void );
 
 	//private:

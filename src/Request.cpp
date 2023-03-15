@@ -65,6 +65,9 @@ Request & Request::operator=(const Request &assign)
 // Returns the content of the _protocol (AKA HTTP Version)
 const std::string&	Request::readProtocol( void ) { return protocol; }
 
+// Returns the httpRequest path to doc requested by client
+const std::string&	Request::readPath( void ) { return path; }
+
 // Returns the content of the _method (AKA GET, POST, or DELETE)
 const Method&	Request::readMethod( void ) { return method; }
 
@@ -156,6 +159,7 @@ void Request::parsePath(std::string str)
 		this->path = str;
 	//TODO check more path and query
 }
+
 int Request::parse_headers()
 {
 	//TODO parse header for atleast Host
@@ -192,6 +196,16 @@ int Request::prepare_for_body()
 {
 	//TODO check if header is ok
 	//TODO prepare chunk receiving
+	if (this->headers.find("Host") == this->headers.end() || this->headers["Host"].empty())
+	{
+		this->error_code = BADREQUEST;
+		this->parse_status = COMPLETED;
+	}
+	else
+	{
+		this->parse_status = COMPLETED;
+	}
+	return (this->error_code);
 	if (this->headers.find("Host") == this->headers.end() || this->headers["Host"].empty())
 	{
 		this->error_code = BADREQUEST;

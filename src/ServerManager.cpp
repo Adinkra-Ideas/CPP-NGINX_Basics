@@ -103,7 +103,7 @@ namespace http {
 				// If a socket FD received an incoming request, then the Server config object
 				// mapped to the socket FD is passed to acceptConnection()
 				if( FD_ISSET(i, &_received_fds_tmp) && this->_running_servers.count(i) )
-					acceptConnection(_received_fds_tmp, this->_running_servers.find(i)->second);
+					acceptConnection(this->_running_servers.find(i)->second);
 
 				// Checking if acceptConnection() has already accepted this FD successfully
 				// and initialized a connected_clients Map element for it
@@ -134,7 +134,7 @@ namespace http {
 	// A Map element is added to this->connected_clients mapping*
 	// this client's outgoing Socket Fd to his Client object	*
 	// **********************************************************
-	void ServerManager::acceptConnection(fd_set& rcvd_fds_tmp, http::Server &server)
+	void ServerManager::acceptConnection(http::Server &server)
 	{
 		std::ostringstream	msg;
 	
@@ -154,11 +154,14 @@ namespace http {
 	
 		// adding this client's sock addr to rcvd_fds_tmp so that the if() condition
 		// right after the line that called this function from runServers() can pick it up
-		FD_SET(client_sock, &rcvd_fds_tmp);
-
-		// Updating _biggest_fd to consider this client's outgoing Socket FD as well
-		if (client_sock > this->_biggest_fd)
-			this->_biggest_fd = client_sock;		
+		if (fcntl(client_sock, F_SETFL, O_NONBLOCK) < 0)
+		{
+			close(client_sock);
+			print_status(ft_RED, "fcntl error");
+			return ;
+		}
+		addFDToSet(client_sock, this->_received_fds);
+		// Updating _biggest_fd to consider this client's outgoing Socket FD as well	
 		new_client.setSocket(client_sock);					// storing this client's sock addr to new_client obj
 		this->connected_clients[client_sock] = new_client;	// Adds this ClientsOutboundSockFD=>thisClient'sObject as a Key=>Value to connected_clients map
 		
@@ -187,42 +190,36 @@ namespace http {
 		// Reading Clients httpRequest details from their 
 		// outbound socket addr FD into buffer
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-
 		if (bytes_read == 0)
 		{
-			print_status(ft_GREEN, "Nothing to Read!");
-			if(fd == this->_biggest_fd)
-				this->_biggest_fd--;
+			std::cout << "nothing to read" << std::endl;
+			removeFDToSet(fd, this->_received_fds);
 			close(fd);
 			this->connected_clients.erase(fd);
 			return ;
 		}
-
-		std::string request(buffer);
-		std::cout << "Client header : \n" << buffer << std::endl;
-
-		client.updateTime();
-		client.request.parse(request);
-		if (client.request.getErrorCode() != NONE) // All Mandatory arguments were not present in request header
+		else if (bytes_read < 0)
 		{
-			std::cout << "Bad Request" << std::endl;
-			if(fd == this->_biggest_fd)
-				this->_biggest_fd--;
+			print_status(ft_RED, "Error on read ...");
+			removeFDToSet(fd, this->_received_fds);
 			close(fd);
 			this->connected_clients.erase(fd);
 			return ;
-			//client.request.clear();
 		}
-			
-		if (client.request.parsingFinished()) // All 
+		else
+		{
+			std::string request(buffer);
+			std::cout << "Client header : \n" << buffer << std::endl;
+			client.updateTime();
+			client.request.parse(request);
+			memset(buffer, 0 , sizeof(buffer));
+		}	
+		if (client.request.parsingFinished() || client.request.getErrorCode() != NONE) // even on bad request server sends an answer
 		{
 			assign_server_for_response(client); // I think this is a duplicate action. i might be wrong though
 			client.buildResponse(); //here
-			if(fd == this->_biggest_fd)
-				this->_biggest_fd--;
-			FD_SET(fd, &this->_write_fds);
-			if (fd > this->_biggest_fd)
-				this->_biggest_fd = fd;
+			removeFDToSet(fd, this->_received_fds);
+			addFDToSet(fd, this->_write_fds);
 		}
 
 	}
@@ -237,11 +234,11 @@ namespace http {
 				print_status(ft_GREEN, "Server Response sent to client");
 		else
 			print_status(ft_RED, "Error sending response to client");
-		FD_CLR(fd, &this->_write_fds); //
-		if(fd == this->_biggest_fd)
-			this->_biggest_fd--;
-		close(fd);
-		this->connected_clients.erase(fd);
+		removeFDToSet(fd, this->_write_fds);
+		addFDToSet(fd, this->_received_fds);
+		client.request.clear();
+		// close(fd);
+		// this->connected_clients.erase(fd);
 	}
 
 	void    ServerManager::assign_server_for_response(Client &client) // I thought the processing server has previously being assigned to this client.server() at the point of declaration in acceptConnection()?
@@ -259,4 +256,17 @@ namespace http {
 		}
 	}
 
+	void ServerManager::addFDToSet(const int fd, fd_set &set)
+	{
+		FD_SET(fd, &set);
+		if (fd > this->_biggest_fd)
+			this->_biggest_fd = fd;
+	}
+	//TODO improve biggest fd search
+	void ServerManager::removeFDToSet(const int fd, fd_set &set)
+	{
+		FD_CLR(fd, &set);
+		if(fd == this->_biggest_fd)
+			this->_biggest_fd--;
+	}
 } // namespace ft
