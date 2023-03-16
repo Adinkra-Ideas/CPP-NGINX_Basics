@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:12:03 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/16 16:13:26 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/16 19:25:08 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,5 +95,6 @@ http::Server& Client::getServer()
 void Client::buildResponse() // construct a dynamic http Header response for this client
 {
 	this->response.setRequest(this->request); // copying request to client
+	this->response.setServer(this->server);
 	this->response.buildResponse();				//here
 }
