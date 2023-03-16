@@ -2,10 +2,12 @@
 
 // Constructors
 Request::Request() :
-	parse_status(FIRST_LINE)
+	parse_status(FIRST_LINE),
+	keep_alive(false)
 {
 	gettimeofday(&this->start_timer, NULL);
 	error_code = NONE;
+	this->body = "";
 }
 
 Request::Request(const Request &copy) :
@@ -23,7 +25,10 @@ Request::Request(const Request &copy) :
 	length(copy.length),
 	start_timer(copy.start_timer),
 	last_timer(copy.last_timer),
-	error_code(copy.error_code)
+	error_code(copy.error_code),
+	chunk_part(copy.chunk_part),
+	body(copy.body),
+	keep_alive(copy.keep_alive)
 {
 }
 
@@ -54,6 +59,9 @@ Request & Request::operator=(const Request &assign)
 			this->start_timer = assign.start_timer;
 			this->last_timer = assign.last_timer;
 			this->error_code = assign.error_code;
+			this->chunk_part = assign.chunk_part;
+			this->body = assign.body;
+			this->keep_alive = assign.keep_alive;
 		}
 		return *this;
 }
@@ -68,6 +76,15 @@ const std::string&	Request::readProtocol( void ) { return protocol; }
 // Returns the content of the _method (AKA GET, POST, or DELETE)
 const Method&	Request::readMethod( void ) { return method; }
 
+std::string Request::getRequestBody()
+{
+	return (this->body);
+}
+
+bool Request::keepAlive()
+{
+	return (this->keep_alive);
+}
 	// ************	READING AND WRITING METHODS ENDS	**********************
 	//////////////////////////////////////////////////////////////////////////
 	// ***********	XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX BEGINS********************
@@ -78,7 +95,6 @@ int Request::parse(std::string &buffer)
 	size_t error_lvl;
 	this->buffer += buffer;
 	buffer.clear();
-
 	// parse_status is set to FIRST_LINE as set by request def construc from client.hpp
 	// then if first line of client request was parsed successfully, parse_status is set to HEADERS
 	if (parse_status == FIRST_LINE)
@@ -166,7 +182,6 @@ int Request::parse_headers()
 	size_t delimiter;
 	std::string key;
 	std::string value;
-
 	// copy all the lines below line one from request Header
 	// to a map of Name=>Value
 	while (end != std::string::npos)
@@ -175,38 +190,65 @@ int Request::parse_headers()
 			break ;
 		delimiter = this->buffer.find_first_of(':', start);
 		key = this->buffer.substr(start, delimiter - start);
+		//TODO value might have leading whitespace and trailing or not
 		value = this->buffer.substr(delimiter + 2, end - delimiter - 2);
-		this->headers[key] = value;				// we need to print out what'S stored in headers map object
+		this->headers[to_lower_case(key)] = value;				// we need to print out what'S stored in headers map object
 		start = end + 2;
 		end = this->buffer.find_first_of(EOL, start);
 	}
 	// std::cout << "map header holds: \n";
 	// for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it )
-	// 	std::cout << "Key= " << (it->first) << " value= " << (it->second) << std::endl;
+	// 	std::cout << "Key =" << (it->first) << "$ value =" << (it->second) << "$" <<std::endl;
 
 	buffer.erase(0, end + 2);
 	this->parse_status = PREBODY;
 	return (this->error_code);
+}
+//TODO or make all leading char upper?
+std::string Request::to_lower_case(std::string str)
+{
+	size_t string_len = str.length();
+	for (size_t i = 0; i < string_len; ++i)
+		str[i] = std::tolower(str[i]);
+	return str;
 }
 
 int Request::prepare_for_body()
 {
 	//TODO check if header is ok
 	//TODO prepare chunk receiving
-	if (this->headers.find("Host") == this->headers.end() || this->headers["Host"].empty())
+	if (this->headers.find("host") == this->headers.end() || this->headers["host"].empty())
 	{
 		this->error_code = BADREQUEST;
 		this->parse_status = COMPLETED;
+		return (this->error_code);
 	}
-	else
+	std::map<std::string, std::string>::iterator iter = this->headers.find("connection");
+	if (iter != this->headers.end())
 	{
-		this->parse_status = COMPLETED;
+		if (iter->second == "keep-alive")
+		{
+			this->keep_alive = true;
+		}
 	}
-	return (this->error_code);
-	if (this->headers.find("Host") == this->headers.end() || this->headers["Host"].empty())
+	if(this->headers.find("transfer-encoding") != this->headers.end() && this->headers["transfer-encoding"] == "chunked")
 	{
-		this->error_code = BADREQUEST;
-		this->parse_status = COMPLETED;
+		this->parse_status = CHUNK;
+		this->chunk_part = CHUNKSIZE;
+	}
+	else if (this->headers.find("content-length") != this->headers.end())
+	{
+		try
+		{
+			this->body_length = parse_str_to_int(this->headers["content-length"]);	
+		}
+		catch(const std::exception& e)
+		{
+			this->error_code = BADREQUEST;
+			this->parse_status = COMPLETED;
+			return (this->error_code);
+		}
+		this->parse_status = BODY;
 	}
 	else
 	{
@@ -215,12 +257,39 @@ int Request::prepare_for_body()
 	return (this->error_code);
 }
 
-// how to get request body?
+size_t Request::parse_str_to_int(std::string str)
+{
+	long result = 0;
+	int str_len = str.length();
+	for (int i = 0; i < str_len; ++i)
+	{
+		if(isdigit(str[i]))
+		{
+			result *= 10;
+			result += str[i] - '0';
+		}
+		else
+			throw ;
+		if (result > MAXBODYSIZE)
+			throw ;
+	}
+	return (result);
+}
+
 int Request::parse_body()
 {
-	//TODO check and get request body
-	this->parse_status = COMPLETED;
-	return (0);
+	this->body += this->buffer;
+	this->buffer.clear();
+	if (this->body.length() == this->body_length)
+	{
+		this->parse_status = COMPLETED;
+	}
+	else if (this->body.length() > this->body_length)
+	{
+		this->parse_status = COMPLETED;
+		this->error_code = 	BADREQUEST;
+	}
+	return (this->error_code);
 }
 
 int Request::parse_chunks()
@@ -249,5 +318,6 @@ void Request::clear()
 {
 	this->error_code = NONE;
 	this->parse_status = FIRST_LINE;
+	this->keep_alive = false;
 	this->buffer.clear();
 }

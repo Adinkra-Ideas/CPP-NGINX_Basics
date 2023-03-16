@@ -50,8 +50,10 @@ namespace http {
 		std::map<int, http::Server> 	_running_servers;	// mapped as foreach Running Server (Server._in_sock=>Server)
 		std::map<int, Client> 		connected_clients;
 
+		void checkTimeout();
 		void addFDToSet(const int fd, fd_set &set);
 		void removeFDToSet(const int fd, fd_set &set);
+		void closeConnectionToClient(const int fd);
 	};
 
 } // namespace ft

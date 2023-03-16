@@ -36,6 +36,12 @@ enum ErrorCode
 	NOTIMPLEMENTED = 501
 };
 
+enum Chunk
+{
+	CHUNKSIZE,
+	CHUNKDATA
+};
+
 // Class that stores the httpRequest data of a client
 class Request
 {
@@ -57,7 +63,8 @@ class Request
 
 		const std::string&	readProtocol( void );
 		const Method&		readMethod( void );
-
+		std::string getRequestBody();
+		bool keepAlive();
 	//private:
 		int first_line();
 		int parse_headers();
@@ -67,6 +74,8 @@ class Request
 		void parseMethod(std::string str);
 		void parsePath(std::string str);
 		void parseProtocol(std::string str);
+		size_t parse_str_to_int(std::string str);
+		std::string to_lower_case(std::string str);
 		Status parse_status;
 		std::string buffer;
 		Method method;				//what kind of request: GET,POST, DELETE ...
@@ -82,6 +91,9 @@ class Request
 		struct timeval start_timer; //for timeout checking
   		struct timeval last_timer;
 		ErrorCode error_code; //enum of the error codes
+		Chunk chunk_part;
+		std::string body;
+		bool keep_alive;
 };
 
 #endif
