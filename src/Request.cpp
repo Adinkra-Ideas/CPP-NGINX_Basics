@@ -174,7 +174,6 @@ void Request::parsePath(std::string str)
 	else
 		this->path = str;
 	//TODO check more path and query
-=======
 }
 
 void Request::parseMethod(std::string str)
