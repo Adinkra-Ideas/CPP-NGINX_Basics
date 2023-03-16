@@ -228,15 +228,17 @@ namespace http {
 	{
 
 		long bytesSent;
-		bytesSent = send(client.getSocket(), client.response.response_content.data(), client.response.response_content.size(), 0);
+		bytesSent = send(client.getSocket(), client.response.refResponseCont().data(), client.response.refResponseCont().size(), 0);
 		if ( bytesSent >= 0 &&
-				static_cast<long unsigned int>(bytesSent) == client.response.response_content.size() )
+				static_cast<long unsigned int>(bytesSent) == client.response.refResponseCont().size() )
 				print_status(ft_GREEN, "Server Response sent to client");
 		else
 			print_status(ft_RED, "Error sending response to client");
 		removeFDToSet(fd, this->_write_fds);
 		addFDToSet(fd, this->_received_fds);
 		client.request.clear();
+
+		client.response.refResponseCont().clear();
 		// close(fd);
 		// this->connected_clients.erase(fd);
 	}
