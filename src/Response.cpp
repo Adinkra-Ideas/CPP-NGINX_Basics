@@ -10,7 +10,6 @@ Response::Response(const Response &copy)
 	(void) copy;
 }
 
-
 // Destructor
 Response::~Response()
 {
@@ -35,7 +34,7 @@ void Response::setServer(http::Server &server)
 
 std::string& Response::refResponseCont( void ) { return _response_content; }
 
-//TODO building the response
+// TODO building the response
 void Response::buildResponse( void )
 {
 	std::ostringstream	tmp;
@@ -75,15 +74,22 @@ void Response::buildResponse( void )
 const std::string&	Response::buildErrorCodePage(std::string& web_page, const ErrorCode& status) {
 	std::stringstream	buff_tmp;
 	std::ifstream		fin;
+	std::string			error_pages;
 
 	if ( status == OK )
 		return web_page;
 
-	buff_tmp << "public_html/" << status << ".html";
+	// assign the the error_page value from server config to error_pages,
+	// if error_pages.size() <= 0, use our default error page directory
+	// else, use the error_page value from server config
+	error_pages = _server->readErrorPage();
+	if ( error_pages.size() <= 0 )
+		buff_tmp << "public_html/error_pages/" << status << ".html";
+	else
+		buff_tmp << error_pages.c_str() << "/" << status << ".html";
+	
 	fin.open( buff_tmp.str().c_str() );
-	if ( ! fin.good() )
-		web_page.insert(0, "<!DOCTYPE html><html lang=\"en\"><head><title>404 NOT FOUND</title></head><body><h1>404 NOT FOUND</h1></body></html>");
-	else {
+	if ( fin.good() ) {
 		buff_tmp.str("");
 		buff_tmp << fin.rdbuf();
 		fin.close();
@@ -146,7 +152,7 @@ ErrorCode	Response::processGetRequest( std::string& requested_file) {
 		std::ifstream		fin;
 		fin.open(requested_file.c_str());
 		if ( ! fin.good() )
-			return NOTFOUND;				//dont know if returning from within a nested quote might cause UB
+			return NOTFOUND;
 		std::stringstream buff_tmp;
 		buff_tmp << fin.rdbuf();
 		fin.close();
@@ -164,21 +170,17 @@ std::string	Response::getContentType( const std::string& requested_file, const E
 	std::string		tmp;
 	std::size_t		pos;
 
-	if ( status == NOTFOUND )  {// or other unknown conditions
+	if ( status != OK )  {
 		tmp.insert( 0, "text/html" );
 		return tmp;
 	}
 
 	// Getting file extension stored to tmp
 	if ( (pos = requested_file.find_last_of('.')) != std::string::npos )
-		tmp = requested_file.substr(pos + 1);
+		tmp = requested_file.substr(pos);
 	
-	// Adding the necessary browser-compatible content-type description
-	if ( ! tmp.compare("html") )
-		tmp.insert( 0, "text/" );
-	// else if				// for adding more supported content-types
-
-
+	// retrieving the necessary browser-compatible content-type description
+	tmp = http::mime::getMimeType(tmp);
 	return tmp;
 }
 

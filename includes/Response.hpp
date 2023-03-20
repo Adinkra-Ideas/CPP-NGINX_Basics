@@ -9,6 +9,7 @@
 # include "Server.hpp"
 # include "Location.hpp"
 # include "utils.hpp"
+# include "Mime.hpp"
 
 // We will assemble all the required httpResponse status codes here
 // enum statusCode
@@ -52,7 +53,7 @@ class Response
 
 	private:
 		Request				_request;	// object holding the parsed requestheader
-		http::Server		*_server;	// pointer to server object 
+		http::Server		*_server;	// pointer to server object managing this response
 
 		std::string			_requested_file;		// The filepath of the final file to be delivered to the client will be stored here. Including the file extension, coz the extension will be required when building the "content_type" part of the header response
 		std::string			_web_page;				// where the returned webpage will be stored
