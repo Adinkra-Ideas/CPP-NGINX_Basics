@@ -26,6 +26,7 @@ $(OBJECTS_PREFIXED): build/%.o : src/%.cpp
 
 clean:		
 			/bin/rm -rf $(OBJDIR)
+			clear
 				
 fclean:		clean
 			/bin/rm -f $(NAME)

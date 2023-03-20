@@ -5,6 +5,7 @@
 # include <sstream>
 # include <string>
 # include <vector>
+# include <sys/stat.h>
 # include "Request.hpp"
 # include "Server.hpp"
 # include "Location.hpp"
@@ -55,14 +56,16 @@ class Response
 		Request				_request;	// object holding the parsed requestheader
 		http::Server		*_server;	// pointer to server object managing this response
 
-		std::string			_requested_file;		// The filepath of the final file to be delivered to the client will be stored here. Including the file extension, coz the extension will be required when building the "content_type" part of the header response
+		std::string			_requested_file;		// The local/server filepath of the final file to be delivered to the client will be stored here. Including the file extension, coz the extension will be required when building the "content_type" part of the header response
 		std::string			_web_page;				// where the returned webpage will be stored
 		std::string     	_response_content;		// where the http response will be stored
+		std::string			_location;				// Web address where the client's data eventually got fetched from 
 
 		std::string	translateErrorCode( const ErrorCode& status_code );
 		std::string	getContentType( const std::string& requested_file, const ErrorCode& status );
 		const std::string&	buildErrorCodePage(std::string& web_page, const ErrorCode& status);
-		ErrorCode	processGetRequest( std::string& requested_file );
+		ErrorCode	respondGetRequest( std::string& requested_file );
+		bool	isDirectory(const std::string &path);
 };
 
 #endif
