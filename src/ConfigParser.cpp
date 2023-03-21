@@ -281,4 +281,4 @@ namespace http {
 			line.erase( line.begin() + pos, line.end() );
 	}
 
-}	// namespace ft
+}	// namespace http

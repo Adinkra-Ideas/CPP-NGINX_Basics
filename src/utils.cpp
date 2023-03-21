@@ -26,4 +26,42 @@ namespace http {
 	}
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
 
-}	// namespace ft
+	namespace ft {
+
+		// Only returns true when path is a directory
+		bool	isDirectory(const std::string &path)
+		{
+			struct stat file_stat;
+
+			if (stat(path.c_str(), &file_stat) != 0)
+				return (false);
+
+			return (S_ISDIR(file_stat.st_mode));
+		}
+
+		// ******************************************************************
+		// Converts the error code stored in status_code into the readable	*
+		// error message. status_code is a var of data type ErrorCode enum	*
+		// ******************************************************************
+		std::string	translateErrorCode( const ErrorCode& status_code ) {
+			switch (status_code) {
+				case 200:
+					return "OK";
+				case 301:
+					return "MOVEDPERMANENTLY";
+				case 403:
+					return "FORBIDDEN";
+				case 404:
+					return "NOT FOUND";
+				case 405:
+					return "METHOD NOT ALLOWED";
+				case 413:
+					return "CONTENT TOO LARGE";
+				default:
+					return "UNKNOWN RESPONSE";	// Optional
+			}
+		}
+
+	}	// namespace ft
+
+}	// namespace http
