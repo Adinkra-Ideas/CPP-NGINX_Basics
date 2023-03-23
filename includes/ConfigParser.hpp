@@ -24,7 +24,6 @@ namespace http {
 	public:
 		ConfigParser(std::vector<Server>& servers, const char *path);
 		~ConfigParser( void );
-
 		ConfigParser( const ConfigParser& other );
 
 		ConfigParser& operator= ( const ConfigParser& other );

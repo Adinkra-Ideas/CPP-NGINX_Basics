@@ -49,6 +49,8 @@ namespace http {
 					return "OK";
 				case 301:
 					return "MOVEDPERMANENTLY";
+				case 302:
+					return "FOUND";
 				case 403:
 					return "FORBIDDEN";
 				case 404:

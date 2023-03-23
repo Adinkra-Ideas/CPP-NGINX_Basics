@@ -83,7 +83,7 @@ namespace http {
 		std::size_t		pos;
 
 		// Checking if we are returning an error page to 
-		if ( status != OK || status != MOVEDPERMANENTLY)  {
+		if ( status != OK || status != MOVEDPERMANENTLY || status != FOUND )  {
 			tmp.insert( 0, "text/html" );
 			return tmp;
 		}
@@ -108,7 +108,7 @@ namespace http {
 		std::string			error_pages;
 
 		// if request is okay or there was a redirection, no need to build an error page
-		if ( status == OK || status == MOVEDPERMANENTLY )
+		if ( status == OK || status == MOVEDPERMANENTLY || status == FOUND )
 			return web_page;
 
 		// assign the error_page value from server config to error_pages,
@@ -178,6 +178,7 @@ namespace http {
 		}
 		if ( it == _server->refLocations().end() )
 			return NOTFOUND;
+		// else if ( methodIsSupported("GET"); // adding method not allowed error)
 		else {
 			loc_file_path.append(it->readRoot());
 			loc_file_path.append(web_url_path);
@@ -228,7 +229,7 @@ namespace http {
 
 			_location.append(web_url_path);
 
-			// // if it's a dir and no index file found in Location context, or index file not readable
+			// if it's a dir and no index file found in Location context, or index file not readable
 			{
 				std::ifstream		fin;
 				std::string			tmp_local_path = loc_file_path;
@@ -245,6 +246,14 @@ namespace http {
 
 			_location.append(it->readIndex());
 			return MOVEDPERMANENTLY;	
+		}
+
+		// Check if 302 (AKA http redirect) redirection is present in route/location
+		else if ( it->readRewrite().size() ) {
+			_location.append(it->readRewrite().c_str());
+
+			std::cout << " rewrite confirm: loc path = " << it->readPath() << " loc rewrite = " << it->readRewrite() << std::endl; 
+			return FOUND;
 		}
 		return NONE;
 	}
