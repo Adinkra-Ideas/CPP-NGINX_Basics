@@ -40,27 +40,28 @@ namespace http {
 	void Response::buildResponse( void )
 	{
 		std::ostringstream	tmp;
-		ErrorCode			status_code = NONE;
+		ErrorCode			status = NONE;
 
 		if ( _request.readMethod() == GET )
-			status_code = respondGetRequest(_loc_file_path);
+			status = respondGetRequest(_loc_file_path);
 		// else if ( _request.readMethod() == POST )
-		// 	status_code = respondPostRequest();
+		// 	status = respondPostRequest();
 		// else if ( _request.readMethod() == DELETE )
-		// 	status_code = respondDeleteRequest();
+		// 	status = respondDeleteRequest();
 		else
-			status_code = METHODNOTALLOWED;
+			status = METHODNOTALLOWED;
 
-		buildErrorCodePage(_web_page, status_code);
+		if ( status != OK || status != MOVEDPERMANENTLY || status != FOUND )
+			buildErrorCodePage(_web_page, status);
 
 		// ERROR 413 goes here if 
 
 		// Add httpResponse status line to stream z.B [HTTP/1.1 200 OK]
 		// Add content-type to stream z.B [Content-Type: text/html]
 		tmp << _request.readProtocol() << " "
-			<< status_code << " "
-			<< ft::translateErrorCode(status_code) << "\n"
-			<< "Content-Type: " << getContentType(_loc_file_path, status_code) << " \n"
+			<< status << " "
+			<< ft::translateErrorCode(status) << "\n"
+			<< "Content-Type: " << getContentType(_loc_file_path, status) << " \n"
 			<< "Content-Length: " << _web_page.size() << " \n"
 			<< "Location: " << _location << "\n\n"
 			<< _web_page.c_str();
@@ -102,14 +103,17 @@ namespace http {
 	// just name the error code file the "error_number.html" and it will	*
 	// automatically be picked by this function								*
 	// **********************************************************************
-	const std::string&	Response::buildErrorCodePage(std::string& web_page, const ErrorCode& status) {
+	void	Response::buildErrorCodePage(std::string& web_page, ErrorCode& status) {
 		std::stringstream	buff_tmp;
 		std::ifstream		fin;
 		std::string			error_pages;
 
-		// if request is okay or there was a redirection, no need to build an error page
-		if ( status == OK || status == MOVEDPERMANENTLY || status == FOUND )
-			return web_page;
+		// if we have a LISTDIRECTORYCONTENT request, do 
+		if ( status == LISTDIRECTORYCONTENTS ) {
+			ft::listDirectoryContent(web_page, _loc_file_path, _root_directory);
+			status = OK;
+			return;
+		}
 
 		// assign the error_page value from server config to error_pages,
 		// if error_pages.size() <= 0, use our default error page directory
@@ -127,8 +131,9 @@ namespace http {
 			fin.close();
 			web_page.insert(0, buff_tmp.str().c_str() );
 		}
-		return web_page;
 	}
+
+	
 
 	// ******************************************************************************
 	// handles the GET method request. It uses the Location context (of the Server	*
@@ -156,6 +161,9 @@ namespace http {
 			pos = dir_sign.find_first_of('/');
 			web_url_path = dir_sign.substr(pos);
 			dir_sign.erase(pos + 1);
+			pos = web_url_path.size();
+			if ( pos > 2 && web_url_path.at(pos - 1) == '/' )
+				web_url_path.erase(pos - 1, 1);	// we want to search Location context using z.B '/web_url_path' not '/web_url_path/'
 		} else {
 			return NOTFOUND;
 		}
@@ -182,6 +190,7 @@ namespace http {
 		else {
 			loc_file_path.append(it->readRoot());
 			loc_file_path.append(web_url_path);
+			_root_directory = it->readRoot();
 		}
 
 		// check if any redirection is present
@@ -236,10 +245,17 @@ namespace http {
 
 				if ( ! tmp_local_path.empty() && *tmp_local_path.end() - 1 != '/' )
 					tmp_local_path.push_back('/');
-				tmp_local_path.append(it->readIndex());
+				tmp_local_path.append( ((it->readIndex().size() > 0) ? it->readIndex() : ";)") );
 				fin.open(tmp_local_path.c_str());
 				if ( ! fin.good() ) {
 					_location.clear();
+
+					// if autoindex is "on", directories that do not have an index.html file will 
+					// will list their contents intead of showing "403 forbidden" error
+					if ( ! it->readAutoind().compare("on") ) {
+						return LISTDIRECTORYCONTENTS;
+					}
+					
 					return FORBIDDEN;
 				}
 			}
@@ -251,8 +267,6 @@ namespace http {
 		// Check if 302 (AKA http redirect) redirection is present in route/location
 		else if ( it->readRewrite().size() ) {
 			_location.append(it->readRewrite().c_str());
-
-			std::cout << " rewrite confirm: loc path = " << it->readPath() << " loc rewrite = " << it->readRewrite() << std::endl; 
 			return FOUND;
 		}
 		return NONE;

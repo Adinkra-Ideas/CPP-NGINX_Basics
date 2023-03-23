@@ -39,6 +39,37 @@ namespace http {
 			return (S_ISDIR(file_stat.st_mode));
 		}
 
+		// ******************************************************************************
+		// This function reads a directory's content from terminal, then builds it into	*
+		// a browser-displayable-webpage format 										*
+		// web_page param1 is a reference to a string where our webpage will be stored.	*
+		// loc_file_path param2 is a copy of the local file path whose content we will 	*
+		// be using to build our webpage												*
+		// root param3 is the name of directory used as root, which had to be concate-	*
+		// nated with httprequest path to form loc_file_path							*
+		// ******************************************************************************
+		void	listDirectoryContent(std::string& web_page, std::string loc_file_path, const std::string& root) {
+			DIR					*d;
+			struct dirent		*dir;
+			std::ostringstream	tmp;
+
+			std::size_t	pos = loc_file_path.size();
+			if ( pos && loc_file_path.at(pos - 1) != '/')
+				loc_file_path.push_back('/');
+
+			d = opendir(loc_file_path.c_str());
+			if (d) {
+				loc_file_path.erase(0, root.size());
+				tmp << "<html><head><title> test </title></head><body>";
+				while ((dir = readdir(d)) != NULL) {
+					tmp << "<p><a href=\"" << loc_file_path << dir->d_name << "\">" << dir->d_name << "</a></p>";
+				}
+				tmp << "</body></html>";
+				web_page = tmp.str();
+				closedir(d);
+			}
+		}
+
 		// ******************************************************************
 		// Converts the error code stored in status_code into the readable	*
 		// error message. status_code is a var of data type ErrorCode enum	*
@@ -59,6 +90,8 @@ namespace http {
 					return "METHOD NOT ALLOWED";
 				case 413:
 					return "CONTENT TOO LARGE";
+				case 418:
+					return "LISTDIRECTORYCONTENTS";
 				default:
 					return "UNKNOWN RESPONSE";	// Optional
 			}

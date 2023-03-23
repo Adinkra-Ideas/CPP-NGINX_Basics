@@ -239,10 +239,9 @@ namespace http {
 					}
 			}	
 		}
-		else if ( ! std::strcmp("index", name + 1) ||
-					! std::strcmp("listen", name + 1) ||
-					! std::strcmp("root", name + 1) // || ! std::strcmp("error_page", name + 1)
-					) { // for mandatory directives
+		else if ( 	! std::strcmp("listen", name + 1) ||
+					! std::strcmp("root", name + 1) 			// || ! std::strcmp("error_page", name + 1) || ! std::strcmp("index", name + 1)
+					) { 										// for mandatory directives
 			msg << "A Mandatory Simple Directive (" << name + 1
 				<< ") is missing!";
 			exit_with_error(msg.str());
