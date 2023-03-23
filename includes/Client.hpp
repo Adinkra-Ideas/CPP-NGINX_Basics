@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:06:35 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/16 16:05:14 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/21 20:52:19 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ class Client
 		time_t getupdateTime();
 		//TODO make request/response private?
 		Request request;
-		Response response;					// This object receives the parsed requestHeader object through its method response.setRequest(request)
+		http::Response response;					// This object receives the parsed requestHeader object through its method response.setRequest(request)
 	private:		
 		http::Server        server;				// Stores the Server that this client is connected to
 		int					client_socket;		// Stores the outbound socked address FD where data intended for this client will be written

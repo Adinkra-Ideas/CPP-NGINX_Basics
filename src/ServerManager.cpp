@@ -170,8 +170,10 @@ namespace http {
 
 		client_sock = accept(server.readInSock(), (struct sockaddr *)&client_address,(socklen_t*)&client_address_size);
 		if ( client_sock < 0 )
-			exit_with_error("::acceptConnection() Error! A call to Accept() failed");
-	
+		{
+			print_status(ft_RED, "::acceptConnection() Error! A call to Accept() failed");
+			return ;
+		}
 		// adding this client's sock addr to rcvd_fds_tmp so that the if() condition
 		// right after the line that called this function from runServers() can pick it up
 		if (fcntl(client_sock, F_SETFL, O_NONBLOCK) < 0)

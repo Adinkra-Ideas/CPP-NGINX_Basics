@@ -2,6 +2,7 @@
 # define REQUEST_HPP
 
 # include "WebServer.hpp"
+# include "utils.hpp"
 # include <iostream>
 # include <string>
 # include <map>
@@ -22,18 +23,6 @@ enum Method
 	GET,
 	POST,
 	DELETE
-};
-
-enum ErrorCode
-{
-	NONE,
-	OK = 200,
-	BADREQUEST = 400,
-	UNAUTHORIZED = 401,
-	FORBIDDEN = 403,
-	NOTFOUND = 404,
-	METHODNOTALLOWED = 405,
-	NOTIMPLEMENTED = 501
 };
 
 enum Chunk
