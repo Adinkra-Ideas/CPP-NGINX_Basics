@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Contact NGIN_Y</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
+	<link href="https://drive.google.com/uc?export=view&amp;id=1Xugr6sMP2KHXBkaLNlZFxRnBLNDQkB5R" rel="stylesheet">
+    <style>
+		html, body {
+		display: flex;
+		justify-content: center;
+		font-family: Roboto, Arial, sans-serif;
+		font-size: 15px;
+		}
+		form {
+		border: 5px solid #f1f1f1;
+		}
+		input[type=text], input[type=password] {
+		width: 100%;
+		padding: 16px 8px;
+		margin: 8px 0;
+		display: inline-block;
+		border: 1px solid #ccc;
+		box-sizing: border-box;
+		}
+		button {
+		background-color: #8ebf42;
+		color: white;
+		padding: 14px 0;
+		margin: 10px 0;
+		border: none;
+		cursor: grabbing;
+		width: 100%;
+		}
+		h3 {
+		text-align:center;
+		font-size:14;
+		}
+		button:hover {
+		opacity: 0.8;
+		}
+		.formcontainer {
+		text-align: left;
+		margin: 24px 50px 12px;
+		}
+		.container {
+		padding: 16px 0;
+		text-align:left;
+		}
+		span.psw {
+		float: right;
+		padding-top: 0;
+		padding-right: 15px;
+		}
+		/* Change styles for span on extra small screens */
+		@media screen and (max-width: 300px) {
+			span.psw {
+			display: block;
+			float: none;
+			}
+		}
+	  </style>
+  </head>
+  <body>
+	<header class="header" style="background-color: DodgerBlue;"><div class="container"><div class="header__inner"><a class="nav__link" href="/">NGIN_Y</a><nav class="nav"><a class="nav__link" href="/">Home</a><a class="nav__link" href="/uploads.html">Uploads</a><a class="nav__link" href="/contact.html">Contact</a><a class="nav__link" href="#">Cookies Test</a><a class="nav__link" href="#">Account</a></nav></div></div></header>
+
+    <form method="get">
+      <h3>Contact Us</h>
+		<hr/>
+      <div class="formcontainer">
+      <div class="container">
+        <label for="uname"><strong>Name</strong></label>
+        <input type="text" placeholder="Enter Name" name="uname" required>
+        <label for="msg"><strong>Message</strong></label><br />
+		<textarea cols="40" rows="5" placeholder="Enter Message" name="msg" required></textarea>
+      </div>
+      <button type="submit">Submit Message</button>
+    </form>
+
+	<footer><div class="footer-content"><h3>© 2023 NGIN_Y</h3></div></footer>
+  </body>
+</html>

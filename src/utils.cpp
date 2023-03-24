@@ -60,7 +60,7 @@ namespace http {
 			d = opendir(loc_file_path.c_str());
 			if (d) {
 				loc_file_path.erase(0, root.size());
-				tmp << "<html><head><title> test </title></head><body>";
+				tmp << "<html><head><title> Directory </title></head><body>";
 				while ((dir = readdir(d)) != NULL) {
 					tmp << "<p><a href=\"" << loc_file_path << dir->d_name << "\">" << dir->d_name << "</a></p>";
 				}

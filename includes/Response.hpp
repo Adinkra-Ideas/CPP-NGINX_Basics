@@ -2,6 +2,7 @@
 # define __RESPONSE_HPP__
 
 # include <iostream>
+# include <algorithm>
 # include <sstream>
 # include <fstream>
 # include <string>
@@ -41,6 +42,7 @@ namespace http {
 			std::string     	_response_content;		// where the http response will be stored
 			std::string			_location;				// Web address where the client's data eventually got fetched from 
 			std::string			_root_directory;		// directory used as root by the root(aka location context) servicing this request from _server config
+			std::string			_key_value;			// if a GET request has key=>values appended, they will be backed up to this string
 
 			// private functions/methods
 			std::string			translateErrorCode( const ErrorCode& status_code );
