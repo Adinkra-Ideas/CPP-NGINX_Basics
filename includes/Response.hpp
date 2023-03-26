@@ -48,7 +48,7 @@ namespace http {
 			std::string			translateErrorCode( const ErrorCode& status_code );
 			std::string			getContentType( const std::string& loc_file_path, const ErrorCode& status );
 			void				buildErrorCodePage(std::string& web_page, ErrorCode& status);
-			ErrorCode			respondGetRequest( std::string& loc_file_path );
+			ErrorCode			doGetPost( std::string& loc_file_path, const char *method );
 			ErrorCode			check_for_redirections(std::string& loc_file_path,
 								std::string& web_url_path, std::vector<http::Location>::iterator& it);
 	};

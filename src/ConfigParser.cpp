@@ -83,20 +83,20 @@ namespace http {
 	// ******************************************************************
 	bool	ConfigParser::parse_one_server(std::vector<Server>& servers, std::string context) {
 		Server		serv;
-		std::string	listen_tmp;
+		std::string	max_body_tmp;
 
 		print_status(ft_YELLOW, "Parsing Server Context...");
 
 		while ( parse_one_location(serv.refLocations(), context) )
 			;
 
-		// parse_to_str(serv.readListen(), "\nlisten", context);
 		parse_to_str(serv.readIp(), "\nlisten", context);
 		parse_to_str(serv.readName(), "\nserver_name", context);
 		parse_to_str(serv.readRoot(), "\nroot", context);
-		parse_to_str(serv.readMaxBody(), "\nclient_max_body_size", context);
 		parse_to_str(serv.readErrorPage(), "\nerror_page", context);
+		parse_to_str(max_body_tmp, "\nclient_max_body_size", context);
 
+		max_body_to_int(serv.readMaxBody(), max_body_tmp);
 		setup_server_host(serv.refSockaddrs(), serv.readSockAddrLen(), serv.readIp(), serv.readPort());
 
 		servers.push_back(serv);
@@ -104,6 +104,15 @@ namespace http {
 		print_status(ft_GREEN, "Server Context Parsed Successfully!");
 
 		return true;
+	}
+
+	// converts the string max_body_tmp to a usable integer stored in _max_body
+	void	ConfigParser::max_body_to_int(const std::size_t& _max_body, std::string& max_body_tmp) {
+		std::size_t&		max_body = const_cast<std::size_t&>(_max_body);
+
+		max_body = (std::atol(max_body_tmp.c_str()) > 0) ? std::atol(max_body_tmp.c_str()) : 0;
+		if (max_body)
+			max_body *= INTtoMEBiBYTES;
 	}
 
 	// **********************************************************************

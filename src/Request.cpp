@@ -71,6 +71,9 @@ const std::string&	Request::readPath( void ) { return path; }
 // Returns the content of the _method (AKA GET, POST, or DELETE)
 const Method&	Request::readMethod( void ) { return method; }
 
+// Returns the status code of the httprequest
+const ErrorCode&	Request::readStatusCode( void ) { return error_code; }
+
 	// ************	READING AND WRITING METHODS ENDS	**********************
 	//////////////////////////////////////////////////////////////////////////
 	// ***********	XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX BEGINS********************

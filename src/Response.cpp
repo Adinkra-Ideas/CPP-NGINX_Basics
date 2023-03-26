@@ -42,10 +42,10 @@ namespace http {
 		std::ostringstream	tmp;
 		ErrorCode			status = NONE;
 
-		if ( _request.readMethod() == GET )
-			status = respondGetRequest(_loc_file_path);
-		// else if ( _request.readMethod() == POST )
-		// 	status = respondPostRequest();
+		if ( _request.readStatusCode() == NONE && _request.readMethod() == GET )
+			status = doGetPost(_loc_file_path, "GET");
+		else if ( _request.readStatusCode() == NONE && _request.readMethod() == POST )
+			status = doGetPost(_loc_file_path, "POST");
 		// else if ( _request.readMethod() == DELETE )
 		// 	status = respondDeleteRequest();
 		else
@@ -75,14 +75,14 @@ namespace http {
 	}
 
 	// ******************************************************************************
-	// handles the GET method request. It uses the Location context (of the Server	*
+	// handles the GET/POST request. It uses the Location context (of the Server	*
 	// that received request from incoming client) to calculate the appropriate		*
 	// httpResponse status code. Then if the status code is 200(OK), it retrieves	*
 	// the webpage file from local filepath (depending on the GET path of 			*
 	// the client's httpRequest data). 												*
 	// Return value is the status code of the processed httpRequest					*
 	// ******************************************************************************
-	ErrorCode	Response::respondGetRequest( std::string& loc_file_path) {
+	ErrorCode	Response::doGetPost( std::string& loc_file_path, const char *method ) {
 		std::string		dir_sign;		// z.B. '/'
 		std::string		web_url_path;	// stores the website child page requested by client
 		std::size_t		pos;
@@ -94,11 +94,20 @@ namespace http {
 		if ( pos )
 			dir_sign.erase(0, pos);
 		
+		// put '/' at the beginning if absent
+		if ( dir_sign.size() > 0 && dir_sign.at(0) != '/' )
+			dir_sign.insert(0, 1, '/');
+		
 		// backup name=>value if any
 		pos = dir_sign.find_first_of('?');
 		if ( pos != std::string::npos ) {
 			_key_value = dir_sign.substr(pos);
 			dir_sign.erase(pos);
+
+			std::ofstream 	_fout;
+			_fout.open("allClientKeyValueData", std::ios::out | std::ios::app );
+			_fout << _key_value << std::endl;
+			_fout.close();
 		}
 
 		// In the client's http request, split the directory from path. 
@@ -122,7 +131,7 @@ namespace http {
 		std::vector<http::Location>::iterator	it = _server->refLocations().begin();
 		while ( it != _server->refLocations().end() ) {
 			if ( ! it->readPath().compare(*ptr) && (std::find(it->refMethods().begin(),
-						it->refMethods().end(), "GET") != it->refMethods().end()) )		// Location's method must support GET
+						it->refMethods().end(), method) != it->refMethods().end()) )		// Location's method must support GET
 				break ;
 			++it;
 			if ( it == _server->refLocations().end() && !flag ) {
@@ -138,6 +147,9 @@ namespace http {
 			loc_file_path.append(web_url_path);
 			_root_directory = it->readRoot();
 		}
+
+		// if ( _server->readMaxBody() && _server->readMaxBody() < WHEREisTHErequestSIZEstored?)
+		// 	return CONTENTTOOLARGE;
 
 		// check if any redirection is present
 		ErrorCode	status = NONE;
@@ -155,7 +167,10 @@ namespace http {
 			std::stringstream buff_tmp;
 			buff_tmp << fin.rdbuf();
 			fin.close();
-			_web_page.insert(0, buff_tmp.str().c_str());
+			// It is at this point that PHP or other backend script are exec'd on the file
+			// exec_php(buff_tmp.str(), loc_file_path);
+			_web_page.append(buff_tmp.str().c_str());
+			// WE WILL ALSO RECHECK MAXBODY HERE
 		}
 		return OK;
 	}

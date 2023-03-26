@@ -47,6 +47,7 @@ class Request
 		const std::string&	readProtocol( void );
 		const std::string&	readPath( void );
 		const Method&		readMethod( void );
+		const ErrorCode&	readStatusCode( void );
 
 	//private:
 		int first_line();
