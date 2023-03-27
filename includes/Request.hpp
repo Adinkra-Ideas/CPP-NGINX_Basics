@@ -52,6 +52,7 @@ class Request
 
 		const std::string&	readProtocol( void );
 		const std::string&	readPath( void );
+		const std::string&	readQuery( void );
 		const Method&		readMethod( void );
 		std::string getRequestBody();
 		bool keepAlive();

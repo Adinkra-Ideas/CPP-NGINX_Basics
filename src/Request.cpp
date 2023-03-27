@@ -8,6 +8,7 @@ Request::Request() :
 	gettimeofday(&this->start_timer, NULL);
 	error_code = NONE;
 	this->body = "";
+	this->query = "";
 }
 
 Request::Request(const Request &copy) :
@@ -75,6 +76,8 @@ const std::string&	Request::readProtocol( void ) { return protocol; }
 
 // Returns the httpRequest path to doc requested by client
 const std::string&	Request::readPath( void ) { return path; }
+
+const std::string&	Request::readQuery( void ) { return this->query; }
 
 // Returns the content of the _method (AKA GET, POST, or DELETE)
 const Method&	Request::readMethod( void ) { return method; }
@@ -176,8 +179,16 @@ void Request::parsePath(std::string str)
 	if (str.at(0) != '/')
 		this->error_code = BADREQUEST;
 	else
-		this->path = str;
-	//TODO check more path and query
+	{
+		size_t index = str.find("?");
+		if( index == std::string::npos)
+			this->path = str;
+		else
+		{
+			this->path = str.substr(0, index);
+			this->query = str.substr(index + 1);
+		}
+	}
 }
 
 int Request::parse_headers()

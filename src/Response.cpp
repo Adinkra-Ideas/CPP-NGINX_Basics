@@ -43,7 +43,14 @@ namespace http {
 		ErrorCode			status = NONE;
 
 		if ( _request.readStatusCode() == NONE ) {
-			if ( _request.readMethod() == GET )
+			//TODO very simple way of checking if cgi just checking if cgi-bin is in path
+		if (this->_request.readPath().find("/cgi-bin") != std::string::npos)
+		{
+			Cgi cgi_request(this->_request);
+			status = cgi_request.getErrorCode();
+			this->_web_page = cgi_request.getBody();
+		}
+		else if ( _request.readMethod() == GET )
 				status = doGetPost(_loc_file_path, "GET");
 			else if ( _request.readMethod() == POST )
 				status = doGetPost(_loc_file_path, "POST");
