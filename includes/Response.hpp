@@ -6,6 +6,7 @@
 # include <sstream>
 # include <fstream>
 # include <string>
+# include <cstring>
 # include <vector>
 # include "Request.hpp"
 # include "Server.hpp"

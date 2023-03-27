@@ -186,7 +186,7 @@ int Request::parse_headers()
 		start = end + 2;
 		end = this->buffer.find_first_of(EOL, start);
 	}
-	// std::cout << "map header holds: \n";
+	// std::cout << "\n\nmap header holds: \n";
 	// for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it )
 	// 	std::cout << "Key= " << (it->first) << " value= " << (it->second) << std::endl;
 

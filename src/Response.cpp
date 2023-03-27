@@ -42,19 +42,22 @@ namespace http {
 		std::ostringstream	tmp;
 		ErrorCode			status = NONE;
 
-		if ( _request.readStatusCode() == NONE && _request.readMethod() == GET )
-			status = doGetPost(_loc_file_path, "GET");
-		else if ( _request.readStatusCode() == NONE && _request.readMethod() == POST )
-			status = doGetPost(_loc_file_path, "POST");
-		// else if ( _request.readMethod() == DELETE )
-		// 	status = respondDeleteRequest();
-		else
-			status = METHODNOTALLOWED;
+		if ( _request.readStatusCode() == NONE ) {
+			if ( _request.readMethod() == GET )
+				status = doGetPost(_loc_file_path, "GET");
+			else if ( _request.readMethod() == POST )
+				status = doGetPost(_loc_file_path, "POST");
+			// else if ( _request.readMethod() == DELETE )
+				// status = respondDeleteRequest();
+			else
+				status = METHODNOTALLOWED;
+		} else
+			status = _request.readStatusCode();	// we retrieve status code set from httprequest
 
-		if ( status != OK || status != MOVEDPERMANENTLY || status != FOUND )
+		if ( status != OK && status != MOVEDPERMANENTLY && status != FOUND )
 			buildErrorCodePage(_web_page, status);
 
-		// ERROR 413 goes here if POST
+		// ERROR 413 should have been set from httpRequest
 
 		// Add httpResponse status line to stream z.B [HTTP/1.1 200 OK]
 		// Add content-type to stream z.B [Content-Type: text/html]
@@ -88,6 +91,7 @@ namespace http {
 		std::size_t		pos;
 
 		dir_sign = _request.readPath();
+		// parseUrl(dir_sign);	// for removing the %%%% and other unformated chars
 
 		// erase spaces at the beginning (if any)
 		pos = dir_sign.find_first_not_of(' ');
@@ -98,17 +102,20 @@ namespace http {
 		if ( dir_sign.size() > 0 && dir_sign.at(0) != '/' )
 			dir_sign.insert(0, 1, '/');
 		
-		// backup name=>value if any
-		pos = dir_sign.find_first_of('?');
-		if ( pos != std::string::npos ) {
-			_key_value = dir_sign.substr(pos);
-			dir_sign.erase(pos);
+		// backup name=>value if any			// this should be made to use URL if GET, and use message body if POST
+		if ( ! std::strcmp(method, "GET") ) {
+			pos = dir_sign.find_first_of('?');
+			if ( pos != std::string::npos ) {
+				_key_value = dir_sign.substr(pos);
+				dir_sign.erase(pos);
 
-			std::ofstream 	_fout;
-			_fout.open("allClientKeyValueData", std::ios::out | std::ios::app );
-			_fout << _key_value << std::endl;
-			_fout.close();
-		}
+				std::ofstream 	_fout;
+				_fout.open("allFormData", std::ios::out | std::ios::app );
+				_fout << _key_value << std::endl;
+				_fout.close();
+			}
+		} // else if ( RETRIEVEPOSTformDATA )
+
 
 		// In the client's http request, split the directory from path. 
 		// Store directory to dir_sign and filename to web_url_path
@@ -141,7 +148,7 @@ namespace http {
 			}
 		}
 		if ( it == _server->refLocations().end() )
-			return NOTFOUND;
+			return METHODNOTALLOWED;
 		else {
 			loc_file_path.append(it->readRoot());
 			loc_file_path.append(web_url_path);
@@ -234,7 +241,8 @@ namespace http {
 			buff_tmp << fin.rdbuf();
 			fin.close();
 			web_page.insert(0, buff_tmp.str().c_str() );
-		}
+		} else
+			web_page.insert(0, "<!DOCTYPE html><head><title>Unknown Error</title></head><body>Unknown Error</body></html>");
 	}	
 
 	// ******************************************************************************
