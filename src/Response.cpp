@@ -42,22 +42,23 @@ namespace http {
 		std::ostringstream	tmp;
 		ErrorCode			status = NONE;
 
-		if ( _request.readStatusCode() == NONE ) {
-			//TODO very simple way of checking if cgi just checking if cgi-bin is in path
-		if (this->_request.readPath().find("/cgi-bin") != std::string::npos)
+		if ( _request.readStatusCode() == NONE )
 		{
-			Cgi cgi_request(this->_request);
-			status = cgi_request.getErrorCode();
-			this->_web_page = cgi_request.getBody();
-		}
-		else if ( _request.readMethod() == GET )
-				status = doGetPost(_loc_file_path, "GET");
-			else if ( _request.readMethod() == POST )
-				status = doGetPost(_loc_file_path, "POST");
-			// else if ( _request.readMethod() == DELETE )
-				// status = respondDeleteRequest();
-			else
-				status = METHODNOTALLOWED;
+			//TODO very simple way of checking if cgi just checking if cgi-bin is in path
+			if (this->_request.readPath().find("/cgi-bin") != std::string::npos)
+			{
+				Cgi cgi_request(this->_request);
+				status = cgi_request.getErrorCode();
+				this->_web_page = cgi_request.getBody();
+			}
+			else if ( _request.readMethod() == GET )
+					status = doGetPost(_loc_file_path, "GET");
+				else if ( _request.readMethod() == POST )
+					status = doGetPost(_loc_file_path, "POST");
+				// else if ( _request.readMethod() == DELETE )
+					// status = respondDeleteRequest();
+				else
+					status = METHODNOTALLOWED;
 		} else
 			status = _request.readStatusCode();	// we retrieve status code set from httprequest
 
