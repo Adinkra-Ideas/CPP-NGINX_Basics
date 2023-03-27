@@ -42,7 +42,14 @@ namespace http {
 		std::ostringstream	tmp;
 		ErrorCode			status_code = NONE;
 
-		if ( _request.readMethod() == GET )
+		//TODO very simple way of checking if cgi just checking if cgi-bin is in path
+		if (this->_request.readPath().find("/cgi-bin") != std::string::npos)
+		{
+			Cgi cgi_request(this->_request);
+			status_code = cgi_request.getErrorCode();
+			this->_web_page = cgi_request.getBody();
+		}
+		else if ( _request.readMethod() == GET )
 			status_code = respondGetRequest(_loc_file_path);
 		// else if ( _request.readMethod() == POST )
 		// 	status_code = respondPostRequest();

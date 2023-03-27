@@ -10,6 +10,7 @@
 # include "Location.hpp"
 # include "utils.hpp"
 # include "Mime.hpp"
+# include "Cgi.hpp"
 
 namespace http {
 
