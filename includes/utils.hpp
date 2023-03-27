@@ -13,6 +13,7 @@
 # include <sstream>
 # include <string>
 
+# include <dirent.h>
 # include <sys/stat.h>
 
 // Enum used by Request.hpp && Response.hpp // SHOULD HAVE BEEN INSIDE THE http namespace BUT NOT ALL FILES CURRENTLY SUPPORTS THE namespace
@@ -21,12 +22,14 @@ enum ErrorCode
 	NONE,
 	OK = 200,
 	MOVEDPERMANENTLY = 301,
+	FOUND = 302,
 	BADREQUEST = 400,
 	UNAUTHORIZED = 401,
 	FORBIDDEN = 403,
 	NOTFOUND = 404,
 	METHODNOTALLOWED = 405,
 	CONTENTTOOLARGE = 413,
+	LISTDIRECTORYCONTENTS = 418,
 	NOTIMPLEMENTED = 501
 };
 
@@ -44,6 +47,7 @@ namespace http {
 	namespace ft {
 
 		bool		isDirectory(const std::string &path);
+		void		listDirectoryContent(std::string& web_page, std::string loc_file_path, const std::string& root);
 		std::string	translateErrorCode( const ErrorCode& status_code );
 
 	}	// namespace ft

@@ -2,8 +2,11 @@
 # define __RESPONSE_HPP__
 
 # include <iostream>
+# include <algorithm>
 # include <sstream>
+# include <fstream>
 # include <string>
+# include <cstring>
 # include <vector>
 # include "Request.hpp"
 # include "Server.hpp"
@@ -39,12 +42,14 @@ namespace http {
 			std::string			_web_page;				// where the returned webpage will be stored
 			std::string     	_response_content;		// where the http response will be stored
 			std::string			_location;				// Web address where the client's data eventually got fetched from 
+			std::string			_root_directory;		// directory used as root by the root(aka location context) servicing this request from _server config
+			std::string			_key_value;			// if a GET request has key=>values appended, they will be backed up to this string
 
 			// private functions/methods
 			std::string			translateErrorCode( const ErrorCode& status_code );
 			std::string			getContentType( const std::string& loc_file_path, const ErrorCode& status );
-			const std::string&	buildErrorCodePage(std::string& web_page, const ErrorCode& status);
-			ErrorCode			respondGetRequest( std::string& loc_file_path );
+			void				buildErrorCodePage(std::string& web_page, ErrorCode& status);
+			ErrorCode			doGetPost( std::string& loc_file_path, const char *method );
 			ErrorCode			check_for_redirections(std::string& loc_file_path,
 								std::string& web_url_path, std::vector<http::Location>::iterator& it);
 	};

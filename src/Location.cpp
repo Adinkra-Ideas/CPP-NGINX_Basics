@@ -8,7 +8,7 @@ namespace http {
 
 	Location::Location( const Location& other ) : _path(other._path), _methods(other._methods),
 					_root(other._root), _index(other._index), _autoindex(other._autoindex),
-					_exec(other._exec) {
+					_exec(other._exec), _rewrite(other._rewrite) {
 		// std::cout << "Location copy constructor called " << std::endl;
 		(void) other;
 	}
@@ -22,6 +22,7 @@ namespace http {
 			_index = other._index;
 			_autoindex = other._autoindex;
 			_exec = other._exec;
+			_rewrite = other._rewrite;
 		}
 		return *this;
 	}
@@ -45,5 +46,8 @@ namespace http {
 
 	void	Location::writeExec(const std::string& exec) { _exec = exec; }
 	const std::string&	Location::readExec( void ) { return _exec; }
+
+	void	Location::writeRewrite(const std::string& rewrite) { _rewrite = rewrite; }
+	const std::string&	Location::readRewrite( void ) { return _rewrite; }
 
 }	// namespace ft
