@@ -8,6 +8,9 @@
 // Minimum len for a local IP is 7 chars (0.0.0.0)
 # define MIN_HOST_LEN 7
 
+// for converting z.B. 1MiB = 1024kiB
+# define INTtoMEBiBYTES 1024
+
 # include <iostream>
 # include <vector>
 # include <sstream>
@@ -24,7 +27,6 @@ namespace http {
 	public:
 		ConfigParser(std::vector<Server>& servers, const char *path);
 		~ConfigParser( void );
-
 		ConfigParser( const ConfigParser& other );
 
 		ConfigParser& operator= ( const ConfigParser& other );
@@ -42,6 +44,7 @@ namespace http {
 		void		parse_to_vect(std::vector<std::string>& methods, const std::string& context);
 		void		setup_server_host(struct sockaddr_in& _sockAddrs, const unsigned int& sockAddrs_len,
 									const std::string& ip, const int& port);
+		void		max_body_to_int(const std::size_t& max_body, std::string& max_body_tmp);
 	};
 
 }	// namespace ft

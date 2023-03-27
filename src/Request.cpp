@@ -82,6 +82,10 @@ const std::string&	Request::readQuery( void ) { return this->query; }
 // Returns the content of the _method (AKA GET, POST, or DELETE)
 const Method&	Request::readMethod( void ) { return method; }
 
+// Returns the status code of the httprequest
+const ErrorCode&	Request::readStatusCode( void ) { return error_code; }
+
+
 std::string Request::getRequestBody()
 {
 	return (this->body);
@@ -210,7 +214,7 @@ int Request::parse_headers()
 		start = end + 2;
 		end = this->buffer.find_first_of(EOL, start);
 	}
-	// std::cout << "map header holds: \n";
+	// std::cout << "\n\nmap header holds: \n";
 	// for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it )
 	// 	std::cout << "Key =" << (it->first) << "$ value =" << (it->second) << "$" <<std::endl;
 

@@ -55,8 +55,8 @@ namespace http {
 	void	Server::writeRoot(const std::string& root) { _root = root; }
 	const std::string&	Server::readRoot( void ) { return _root; }
 
-	void	Server::writeMaxBody(const std::string& max_body) { _max_body = max_body; }
-	const std::string&	Server::readMaxBody( void ) { return _max_body; }
+	void	Server::writeMaxBody(const std::size_t& max_body) { _max_body = max_body; }
+	const std::size_t&	Server::readMaxBody( void ) { return _max_body; }
 
 	void	Server::writeErrorPage(const std::string& error_page) { _error_page = error_page; }
 	const std::string&	Server::readErrorPage( void ) { return _error_page; }

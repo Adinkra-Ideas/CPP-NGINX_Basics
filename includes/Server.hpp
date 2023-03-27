@@ -42,8 +42,8 @@ namespace http {
 		const std::string&	readName( void );
 		void				writeRoot(const std::string& root);
 		const std::string&	readRoot( void );
-		void				writeMaxBody(const std::string& max_body);
-		const std::string&	readMaxBody( void );
+		void				writeMaxBody(const std::size_t& max_body);
+		const std::size_t&	readMaxBody( void );
 		void				writeErrorPage(const std::string& error_page);
 		const std::string&	readErrorPage( void );
 
@@ -65,7 +65,7 @@ namespace http {
 
 		std::string				_name;					// (OPTIONAL)	Set the server_names or not
 		std::string				_root;					// (MANDATORY)	Define a directory or a file from where the returned file should be searched
-		std::string				_max_body;				// (OPTIONAL)	Limit client body size for POST method
+		std::size_t				_max_body;				// (OPTIONAL)	Limit client body size
 		std::string				_error_page;			// (MANDATORY)	Setup default directory where error pages will be fetched from. 
 		std::vector<Location>	_locations;				// (OPTIONAL)	For setting multiple single-level-deep locations for this Server instance (if present in config file)
 	};

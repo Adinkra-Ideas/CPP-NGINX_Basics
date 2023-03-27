@@ -56,6 +56,8 @@ class Request
 		const Method&		readMethod( void );
 		std::string getRequestBody();
 		bool keepAlive();
+		const ErrorCode&	readStatusCode( void );
+
 	//private:
 		int first_line();
 		int parse_headers();
