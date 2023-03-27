@@ -119,10 +119,30 @@ namespace http {
 				}
 				// else if (FD_ISSET(i, &_except_fds) // This is for managing exception if necessary
 			}
-			// connected_clients.clear();
+			checkTimeout();
 		}	
 	}
+	void ServerManager::checkTimeout()
+	{
+		for(std::map<int, Client>::iterator iter = this->connected_clients.begin(); iter != this->connected_clients.end(); ++iter)
+		{
+			if (difftime(time(NULL), iter->second.getupdateTime()) > TIMEOUTTIME)
+			{
+				print_status(ft_GREEN, "Timeout Closing connection to Client because of timeout");
+				closeConnectionToClient(iter->first);
+			}
+		}
+	}
+	void ServerManager::closeConnectionToClient(const int fd)
+	{
+		if (FD_ISSET(fd, &this->_received_fds))
+			removeFDToSet(fd, this->_received_fds);
+		if (FD_ISSET(fd, &this->_write_fds))
+			removeFDToSet(fd, this->_write_fds);
+		close(fd);
+		this->connected_clients.erase(fd);
 
+	}
 	// **********************************************************
 	// rcvd_fds_tmp param1 is a reference to the fd_set object 	*
 	// that select() generated through its select(param2)		*
@@ -150,8 +170,10 @@ namespace http {
 
 		client_sock = accept(server.readInSock(), (struct sockaddr *)&client_address,(socklen_t*)&client_address_size);
 		if ( client_sock < 0 )
-			exit_with_error("::acceptConnection() Error! A call to Accept() failed");
-	
+		{
+			print_status(ft_RED, "::acceptConnection() Error! A call to Accept() failed");
+			return ;
+		}
 		// adding this client's sock addr to rcvd_fds_tmp so that the if() condition
 		// right after the line that called this function from runServers() can pick it up
 		if (fcntl(client_sock, F_SETFL, O_NONBLOCK) < 0)
@@ -209,7 +231,7 @@ namespace http {
 		else
 		{
 			std::string request(buffer);
-			std::cout << "Client header : \n" << buffer << std::endl;
+			// std::cout << "Client header : \n" << request << std::endl;
 			client.updateTime();
 			client.request.parse(request);
 			memset(buffer, 0 , sizeof(buffer));
@@ -228,17 +250,24 @@ namespace http {
 	{
 
 		long bytesSent;
-		bytesSent = send(client.getSocket(), client.response.response_content.data(), client.response.response_content.size(), 0);
+		bytesSent = send(client.getSocket(), client.response.refResponseCont().data(), client.response.refResponseCont().size(), 0);
 		if ( bytesSent >= 0 &&
-				static_cast<long unsigned int>(bytesSent) == client.response.response_content.size() )
+				static_cast<long unsigned int>(bytesSent) == client.response.refResponseCont().size() )
 				print_status(ft_GREEN, "Server Response sent to client");
 		else
 			print_status(ft_RED, "Error sending response to client");
-		removeFDToSet(fd, this->_write_fds);
-		addFDToSet(fd, this->_received_fds);
-		client.request.clear();
-		// close(fd);
-		// this->connected_clients.erase(fd);
+
+		if (!client.request.keepAlive())
+		{
+			print_status(ft_GREEN, "Closing connection to Client because response send");
+			closeConnectionToClient(fd);
+		}
+		else
+		{
+			removeFDToSet(fd, this->_write_fds);
+			addFDToSet(fd, this->_received_fds);
+			client.request.clear();
+		}
 	}
 
 	void    ServerManager::assign_server_for_response(Client &client) // I thought the processing server has previously being assigned to this client.server() at the point of declaration in acceptConnection()?

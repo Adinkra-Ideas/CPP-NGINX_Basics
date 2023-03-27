@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: euyi <euyi@student.42wolfsburg.de>         +#+  +:+       +#+        */
+/*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:12:03 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/13 19:39:14 by euyi             ###   ########.fr       */
+/*   Updated: 2023/03/16 19:25:08 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-Client::Client()
+Client::Client(): time_of_last_msg(0)
 {
 	// this->request = NULL;
 	// this->response = NULL;
@@ -81,6 +81,12 @@ void Client::updateTime()
 {
 	this->time_of_last_msg = time(NULL);
 }
+
+time_t Client::getupdateTime()
+{
+	return (this->time_of_last_msg);
+}
+
 http::Server& Client::getServer()
 {
 	return (this->server);
@@ -89,5 +95,6 @@ http::Server& Client::getServer()
 void Client::buildResponse() // construct a dynamic http Header response for this client
 {
 	this->response.setRequest(this->request); // copying request to client
+	this->response.setServer(this->server);
 	this->response.buildResponse();				//here
 }

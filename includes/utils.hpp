@@ -11,6 +11,25 @@
 # include <vector>
 # include <cstdlib>
 # include <sstream>
+# include <string>
+
+# include <sys/stat.h>
+
+// Enum used by Request.hpp && Response.hpp // SHOULD HAVE BEEN INSIDE THE http namespace BUT NOT ALL FILES CURRENTLY SUPPORTS THE namespace
+enum ErrorCode
+{
+	NONE,
+	OK = 200,
+	MOVEDPERMANENTLY = 301,
+	BADREQUEST = 400,
+	UNAUTHORIZED = 401,
+	FORBIDDEN = 403,
+	NOTFOUND = 404,
+	METHODNOTALLOWED = 405,
+	CONTENTTOOLARGE = 413,
+	INTERNALSERVERERROR = 500,
+	NOTIMPLEMENTED = 501
+};
 
 namespace http {
 
@@ -20,7 +39,16 @@ namespace http {
 	std::string getCurrentTime();
 
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
+	///////////////////////////////////////////////////////////////////////////
+	// **************** MISCELLANEOUS FUNCTIONS BEGINS 		*******************
 
-}	// namespace ft
+	namespace ft {
+
+		bool		isDirectory(const std::string &path);
+		std::string	translateErrorCode( const ErrorCode& status_code );
+
+	}	// namespace ft
+
+}	// namespace http
 
 #endif

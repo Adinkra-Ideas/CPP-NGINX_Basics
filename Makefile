@@ -1,7 +1,7 @@
 NAME	=	webserv
 
 SRCS		=	main.cpp ConfigParser.cpp Server.cpp ServerManager.cpp Client.cpp \
-				Request.cpp Response.cpp utils.cpp Location.cpp
+				Request.cpp Response.cpp utils.cpp Location.cpp Mime.cpp Cgi.cpp
 
 OBJDIR = build/
 SRCDIR = src/
@@ -26,6 +26,7 @@ $(OBJECTS_PREFIXED): build/%.o : src/%.cpp
 
 clean:		
 			/bin/rm -rf $(OBJDIR)
+			clear
 				
 fclean:		clean
 			/bin/rm -f $(NAME)
