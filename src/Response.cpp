@@ -110,19 +110,17 @@ namespace http {
 		if ( dir_sign.size() > 0 && dir_sign.at(0) != '/' )
 			dir_sign.insert(0, 1, '/');
 		
-		// backup name=>value if any			// this should be made to use URL if GET, and use message body if POST
-		if ( ! std::strcmp(method, "GET") ) {
-			pos = dir_sign.find_first_of('?');
-			if ( pos != std::string::npos ) {
-				_key_value = dir_sign.substr(pos);
-				dir_sign.erase(pos);
+		// backup name=>value if any
+		if ( _request.readQuery().size() > 0 ) {
+			std::ofstream 	_fout;
+			_fout.open("queryData/allGetQeries", std::ios::out | std::ios::app );
+			if (! _fout.good() )
+				print_status(ft_RED, "Please Manually Create Dir queryData/");
+			_fout << _request.readQuery() << std::endl;
+			_fout.close();
+		} else if ( _request.getRequestBody().size() > 0 )
+			collatePostQuery(_request.getRequestBody());
 
-				std::ofstream 	_fout;
-				_fout.open("allFormData", std::ios::out | std::ios::app );
-				_fout << _key_value << std::endl;
-				_fout.close();
-			}
-		} // else if ( RETRIEVEPOSTformDATA )
 
 
 		// In the client's http request, split the directory from path. 
@@ -163,9 +161,6 @@ namespace http {
 			_root_directory = it->readRoot();
 		}
 
-		// if ( _server->readMaxBody() && _server->readMaxBody() < WHEREisTHErequestSIZEstored?)
-		// 	return CONTENTTOOLARGE;
-
 		// check if any redirection is present
 		ErrorCode	status = NONE;
 		if ( (status = check_for_redirections(loc_file_path, web_url_path, it)) != NONE )
@@ -190,8 +185,56 @@ namespace http {
 		return OK;
 	}
 
+	// collate query parameters of POST requests and do necessary dos
+	void	Response::collatePostQuery( const std::string& post_query ) {
+		std::size_t		pos = 0;
+		std::string		file_name;
+		std::string		tmp;
 
+		std::ofstream 	_fout;
+		_fout.open("queryData/allPostQeries", std::ios::out | std::ios::app );
+		if (! _fout.good() ) {
+			print_status(ft_RED, "Please Manually Create Dir queryData/");
+			return ;
+		}
 
+		// WebKitFormXXX might be peculiar to only POST queries
+		// sent from a Chrome Browser
+		while ( (pos = post_query.find("form-data;", pos)) != std::string::npos ) {
+			if ( (pos = post_query.find("name=", pos)) != std::string::npos ) {
+				pos += std::strlen("name=\"");
+				_fout << post_query.substr(pos, post_query.find('"', pos) - pos)
+						<< "=";
+				pos = post_query.find('"', pos) + 1;
+
+				// check if a file was uploaded
+				if ( !post_query.compare(pos, 11 ,"; filename=") ) {	// 11 == std::strlen("; filename=")
+					pos = post_query.find('"', pos) + 1;
+					tmp = post_query.substr(pos, post_query.find('"', pos) - pos);
+					if ( (pos = post_query.find_first_not_of("\r\n", pos + tmp.size() + 1)) != std::string::npos )
+						_fout << post_query.substr(pos, post_query.find("\r\n", pos) - pos) << "\r\n";
+
+					tmp.insert(0, "queryData/");
+					std::ofstream 	_uploaded_file;
+					_uploaded_file.open(tmp.c_str(), std::ios::out | std::ios::trunc );
+					if ( _uploaded_file.good() ) {
+						if ( (pos = post_query.find("\r\n\r\n", pos)) != std::string::npos ) {
+							pos += std::strlen("\r\n\r\n");
+							_uploaded_file << post_query.substr(pos, post_query.find("\r\n------WebKitForm", pos) - pos);
+						}
+						_uploaded_file.close();
+					}
+				}
+				//else check if the key has a value
+				else if ( !post_query.compare(pos, 4,"\r\n\r\n") ) {	//( (pos = post_query.find("\r\n\r\n", pos)) != std::string::npos ) {
+					pos += 4;
+					// pos = post_query.find_first_not_of("\r\n", pos);
+					_fout << post_query.substr(pos, post_query.find("------WebKitForm", pos) - pos);
+				}
+			}
+		}
+		_fout.close();
+	}
 
 	// **************************************************************
 	// used for building the "Content-Type: " part of httpresponse	*
@@ -223,7 +266,7 @@ namespace http {
 	// automatically be picked by this function								*
 	// **********************************************************************
 	void	Response::buildErrorCodePage(std::string& web_page, ErrorCode& status) {
-		std::stringstream	buff_tmp;
+		std::ostringstream	buff_tmp;
 		std::ifstream		fin;
 		std::string			error_pages;
 
