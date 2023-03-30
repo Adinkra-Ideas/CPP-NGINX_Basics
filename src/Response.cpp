@@ -40,8 +40,12 @@ namespace http {
 	{
 		std::ostringstream	tmp;
 		ErrorCode			status = NONE;
-		
-		if ( _request.readStatusCode() == NONE )
+
+		// parseUrl( _request.readPath() );	// for removing the %%%% and other unformated chars from URL
+
+		if ( _request.readProtocol().compare("HTTP/1.1") )
+			status = HTTPVERSIONNOTSUPPORTED;
+		else if ( _request.readStatusCode() == NONE )
 		{
 			//TODO very simple way of checking if cgi just checking if cgi-bin is in path
 			if (isCgiFile(this->_request.readPath()))
@@ -52,13 +56,14 @@ namespace http {
 			}
 			else if ( _request.readMethod() == GET )
 					status = doGetPost(_loc_file_path, "GET");
-				else if ( _request.readMethod() == POST )
-					status = doGetPost(_loc_file_path, "POST");
-				// else if ( _request.readMethod() == DELETE )
-					// status = respondDeleteRequest();
-				else
-					status = METHODNOTALLOWED;
-		} else
+			else if ( _request.readMethod() == POST )
+				status = doGetPost(_loc_file_path, "POST");
+			// else if ( _request.readMethod() == DELETE )
+				// status = respondDeleteRequest();
+			else
+				status = METHODNOTALLOWED;
+		}
+		else if ( _request.readStatusCode() != NONE )
 			status = _request.readStatusCode();	// we retrieve status code set from httprequest
 
 		if ( status != OK && status != MOVEDPERMANENTLY && status != FOUND )
@@ -98,9 +103,9 @@ namespace http {
 		std::size_t		pos;
 
 		dir_sign = _request.readPath();
-		// parseUrl(dir_sign);	// for removing the %%%% and other unformated chars
 
 		// erase spaces at the beginning (if any)
+		// THIS PART WILL BE REMOVED AFTER A URL PARSER/CLEANER IS IMPLEMENTED
 		pos = dir_sign.find_first_not_of(' ');
 		if ( pos )
 			dir_sign.erase(0, pos);
@@ -108,21 +113,6 @@ namespace http {
 		// put '/' at the beginning if absent
 		if ( dir_sign.size() > 0 && dir_sign.at(0) != '/' )
 			dir_sign.insert(0, 1, '/');
-		
-		// backup name=>value if any			// this should be made to use URL if GET, and use message body if POST
-		if ( ! std::strcmp(method, "GET") ) {
-			pos = dir_sign.find_first_of('?');
-			if ( pos != std::string::npos ) {
-				_key_value = dir_sign.substr(pos);
-				dir_sign.erase(pos);
-
-				std::ofstream 	_fout;
-				_fout.open("allFormData", std::ios::out | std::ios::app );
-				_fout << _key_value << std::endl;
-				_fout.close();
-			}
-		} // else if ( RETRIEVEPOSTformDATA )
-
 
 		// In the client's http request, split the directory from path. 
 		// Store directory to dir_sign and filename to web_url_path
@@ -161,9 +151,23 @@ namespace http {
 			loc_file_path.append(web_url_path);
 			_root_directory = it->readRoot();
 		}
-
-		// if ( _server->readMaxBody() && _server->readMaxBody() < WHEREisTHErequestSIZEstored?)
-		// 	return CONTENTTOOLARGE;
+		
+		// backup data received from GET/POST requests, if any
+		// std::cout << "\n\n\nmerer " << it->readUploads() << std::endl;
+		std::ofstream 	_fout;
+		std::ostringstream	buff_tmp;
+		buff_tmp << (it->readUploads().size() > 0 ? it->readUploads() : "queryData") << "/" 
+			<< ( _request.getRequestBody().size() > 0 ? "postQery" : _request.readQuery().size() > 0 ? "getQery" : "");
+		_fout.open(buff_tmp.str().c_str(), std::ios::out | std::ios::app );
+		if (! _fout.good() )
+			print_status(ft_RED, "Please Manually Create Dir for uploads path");
+		else {
+			if ( _request.getRequestBody().size() > 0 )				// it's a post request
+				collatePostQuery(_request.getRequestBody(), _fout);
+			else if ( _request.readQuery().size() > 0 )				// it's a get request that has query parameters			
+				_fout << _request.readQuery() << std::endl;
+			_fout.close();
+		}
 
 		// check if any redirection is present
 		ErrorCode	status = NONE;
@@ -189,8 +193,48 @@ namespace http {
 		return OK;
 	}
 
+	// collate query parameters of POST requests and store uploaded files
+	void	Response::collatePostQuery( const std::string& post_query, std::ofstream& _fout ) {
+		std::size_t		pos = 0;
+		std::string		file_name;
+		std::string		tmp;
 
+		// WebKitFormXXX might be peculiar to only POST queries
+		// sent from a Chrome Browser
+		while ( (pos = post_query.find("form-data;", pos)) != std::string::npos ) {
+			if ( (pos = post_query.find("name=", pos)) != std::string::npos ) {
+				pos += std::strlen("name=\"");
+				_fout << post_query.substr(pos, post_query.find('"', pos) - pos)
+						<< "=";
+				pos = post_query.find('"', pos) + 1;
 
+				// check if a file was uploaded
+				if ( !post_query.compare(pos, 11 ,"; filename=") ) {	// 11 == std::strlen("; filename=")
+					pos = post_query.find('"', pos) + 1;
+					tmp = post_query.substr(pos, post_query.find('"', pos) - pos);
+					if ( (pos = post_query.find_first_not_of("\r\n", pos + tmp.size() + 1)) != std::string::npos )
+						_fout << post_query.substr(pos, post_query.find("\r\n", pos) - pos) << "\r\n";
+
+					tmp.insert(0, "queryData/");
+					std::ofstream 	_uploaded_file;
+					_uploaded_file.open(tmp.c_str(), std::ios::out | std::ios::trunc );
+					if ( _uploaded_file.good() ) {
+						if ( (pos = post_query.find("\r\n\r\n", pos)) != std::string::npos ) {
+							pos += std::strlen("\r\n\r\n");
+							_uploaded_file << post_query.substr(pos, post_query.find("\r\n------WebKitForm", pos) - pos);
+						}
+						_uploaded_file.close();
+					}
+				}
+				//else check if the key has a value
+				else if ( !post_query.compare(pos, 4,"\r\n\r\n") ) {	//( (pos = post_query.find("\r\n\r\n", pos)) != std::string::npos ) {
+					pos += std::strlen("\r\n\r\n");
+					_fout << post_query.substr(pos, post_query.find("------WebKitForm", pos) - pos);
+				}
+			}
+		}
+		_fout.close();
+	}
 
 	// **************************************************************
 	// used for building the "Content-Type: " part of httpresponse	*
@@ -222,7 +266,7 @@ namespace http {
 	// automatically be picked by this function								*
 	// **********************************************************************
 	void	Response::buildErrorCodePage(std::string& web_page, ErrorCode& status) {
-		std::stringstream	buff_tmp;
+		std::ostringstream	buff_tmp;
 		std::ifstream		fin;
 		std::string			error_pages;
 

@@ -181,6 +181,7 @@ namespace http {
 					parse_to_str(loc.readAutoind(), "\nautoindex", _context);
 					parse_to_str(loc.readExec(), "\nexec", _context);
 					parse_to_str(loc.readRewrite(), "\nrewrite", _context);
+					parse_to_str(loc.readUploads(), "\nuploads", _context);
 
 					locations.push_back(loc);
 					context.erase(pos, temp_end - (pos - 1));

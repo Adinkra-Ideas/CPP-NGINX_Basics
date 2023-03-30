@@ -8,6 +8,7 @@
 # include <string>
 # include <cstring>
 # include <vector>
+# include <unistd.h>
 # include "Request.hpp"
 # include "Server.hpp"
 # include "Location.hpp"
@@ -44,7 +45,7 @@ namespace http {
 			std::string     	_response_content;		// where the http response will be stored
 			std::string			_location;				// Web address where the client's data eventually got fetched from 
 			std::string			_root_directory;		// directory used as root by the root(aka location context) servicing this request from _server config
-			std::string			_key_value;			// if a GET request has key=>values appended, they will be backed up to this string
+			// std::string			_key_value;			// if a GET request has key=>values appended, they will be backed up to this string
 
 			// private functions/methods
 			std::string			translateErrorCode( const ErrorCode& status_code );
@@ -54,6 +55,7 @@ namespace http {
 			ErrorCode			check_for_redirections(std::string& loc_file_path,
 								std::string& web_url_path, std::vector<http::Location>::iterator& it);
 			bool isCgiFile(const std::string& file);
+			void				collatePostQuery( const std::string& post_query, std::ofstream& _fout  );
 	};
 
 }	// namespace http
