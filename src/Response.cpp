@@ -42,7 +42,11 @@ namespace http {
 		std::ostringstream	tmp;
 		ErrorCode			status = NONE;
 
-		if ( _request.readStatusCode() == NONE )
+		// parseUrl( _request.readPath() );	// for removing the %%%% and other unformated chars from URL
+
+		if ( _request.readProtocol().compare("HTTP/1.1") )
+			status = HTTPVERSIONNOTSUPPORTED;
+		else if ( _request.readStatusCode() == NONE )
 		{
 			//TODO very simple way of checking if cgi just checking if cgi-bin is in path
 			if (this->_request.readPath().find("/cgi-bin") != std::string::npos)
@@ -53,13 +57,14 @@ namespace http {
 			}
 			else if ( _request.readMethod() == GET )
 					status = doGetPost(_loc_file_path, "GET");
-				else if ( _request.readMethod() == POST )
-					status = doGetPost(_loc_file_path, "POST");
-				// else if ( _request.readMethod() == DELETE )
-					// status = respondDeleteRequest();
-				else
-					status = METHODNOTALLOWED;
-		} else
+			else if ( _request.readMethod() == POST )
+				status = doGetPost(_loc_file_path, "POST");
+			// else if ( _request.readMethod() == DELETE )
+				// status = respondDeleteRequest();
+			else
+				status = METHODNOTALLOWED;
+		}
+		else if ( _request.readStatusCode() != NONE )
 			status = _request.readStatusCode();	// we retrieve status code set from httprequest
 
 		if ( status != OK && status != MOVEDPERMANENTLY && status != FOUND )
@@ -99,9 +104,9 @@ namespace http {
 		std::size_t		pos;
 
 		dir_sign = _request.readPath();
-		// parseUrl(dir_sign);	// for removing the %%%% and other unformated chars
 
 		// erase spaces at the beginning (if any)
+		// THIS PART WILL BE REMOVED AFTER A URL PARSER/CLEANER IS IMPLEMENTED
 		pos = dir_sign.find_first_not_of(' ');
 		if ( pos )
 			dir_sign.erase(0, pos);
@@ -109,19 +114,6 @@ namespace http {
 		// put '/' at the beginning if absent
 		if ( dir_sign.size() > 0 && dir_sign.at(0) != '/' )
 			dir_sign.insert(0, 1, '/');
-		
-		// backup name=>value if any
-		if ( _request.readQuery().size() > 0 ) {
-			std::ofstream 	_fout;
-			_fout.open("queryData/allGetQeries", std::ios::out | std::ios::app );
-			if (! _fout.good() )
-				print_status(ft_RED, "Please Manually Create Dir queryData/");
-			_fout << _request.readQuery() << std::endl;
-			_fout.close();
-		} else if ( _request.getRequestBody().size() > 0 )
-			collatePostQuery(_request.getRequestBody());
-
-
 
 		// In the client's http request, split the directory from path. 
 		// Store directory to dir_sign and filename to web_url_path
@@ -160,6 +152,23 @@ namespace http {
 			loc_file_path.append(web_url_path);
 			_root_directory = it->readRoot();
 		}
+		
+		// backup data received from GET/POST requests, if any
+		// std::cout << "\n\n\nmerer " << it->readUploads() << std::endl;
+		std::ofstream 	_fout;
+		std::ostringstream	buff_tmp;
+		buff_tmp << (it->readUploads().size() > 0 ? it->readUploads() : "queryData") << "/" 
+			<< ( _request.getRequestBody().size() > 0 ? "postQery" : _request.readQuery().size() > 0 ? "getQery" : "");
+		_fout.open(buff_tmp.str().c_str(), std::ios::out | std::ios::app );
+		if (! _fout.good() )
+			print_status(ft_RED, "Please Manually Create Dir for uploads path");
+		else {
+			if ( _request.getRequestBody().size() > 0 )				// it's a post request
+				collatePostQuery(_request.getRequestBody(), _fout);
+			else if ( _request.readQuery().size() > 0 )				// it's a get request that has query parameters			
+				_fout << _request.readQuery() << std::endl;
+			_fout.close();
+		}
 
 		// check if any redirection is present
 		ErrorCode	status = NONE;
@@ -185,18 +194,11 @@ namespace http {
 		return OK;
 	}
 
-	// collate query parameters of POST requests and do necessary dos
-	void	Response::collatePostQuery( const std::string& post_query ) {
+	// collate query parameters of POST requests and store uploaded files
+	void	Response::collatePostQuery( const std::string& post_query, std::ofstream& _fout ) {
 		std::size_t		pos = 0;
 		std::string		file_name;
 		std::string		tmp;
-
-		std::ofstream 	_fout;
-		_fout.open("queryData/allPostQeries", std::ios::out | std::ios::app );
-		if (! _fout.good() ) {
-			print_status(ft_RED, "Please Manually Create Dir queryData/");
-			return ;
-		}
 
 		// WebKitFormXXX might be peculiar to only POST queries
 		// sent from a Chrome Browser
@@ -227,8 +229,7 @@ namespace http {
 				}
 				//else check if the key has a value
 				else if ( !post_query.compare(pos, 4,"\r\n\r\n") ) {	//( (pos = post_query.find("\r\n\r\n", pos)) != std::string::npos ) {
-					pos += 4;
-					// pos = post_query.find_first_not_of("\r\n", pos);
+					pos += std::strlen("\r\n\r\n");
 					_fout << post_query.substr(pos, post_query.find("------WebKitForm", pos) - pos);
 				}
 			}

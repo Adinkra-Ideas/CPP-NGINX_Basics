@@ -30,6 +30,8 @@ namespace http {
 		const std::string&	readExec( void );
 		void				writeRewrite(const std::string& rewrite);
 		const std::string&	readRewrite( void );
+		void				writeUploads(const std::string& uploads);
+		const std::string&	readUploads( void );
 
 	private:
 		std::string					_path;		// (MANDATORY)	could be something like "/" or maybe "/cgi-bin"
@@ -39,6 +41,7 @@ namespace http {
 		std::string					_autoindex;	// (OPTIONAL)	Turn on or off directory listing
 		std::string					_exec;		// (OPTIONAL)	Execute CGI based on certain file extension (for example .php)
 		std::string					_rewrite;	// (OPTIONAL)	Define a HTTP redirection
+		std::string					_uploads;	// (OPTIONAL)	Define the directory where uploaded files will be stored
 	};
 
 }	// namespace ft

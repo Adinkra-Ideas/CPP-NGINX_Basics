@@ -92,6 +92,8 @@ namespace http {
 					return "CONTENT TOO LARGE";
 				case 418:
 					return "LISTDIRECTORYCONTENTS";
+				case 505:
+					return "HTTP VERSION NOT SUPPORTED";
 				default:
 					return "UNKNOWN RESPONSE";	// Optional
 			}

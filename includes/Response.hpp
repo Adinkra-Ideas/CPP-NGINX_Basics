@@ -54,7 +54,7 @@ namespace http {
 			ErrorCode			doGetPost( std::string& loc_file_path, const char *method );
 			ErrorCode			check_for_redirections(std::string& loc_file_path,
 								std::string& web_url_path, std::vector<http::Location>::iterator& it);
-			void				collatePostQuery( const std::string& post_query );
+			void				collatePostQuery( const std::string& post_query, std::ofstream& _fout  );
 	};
 
 }	// namespace http
