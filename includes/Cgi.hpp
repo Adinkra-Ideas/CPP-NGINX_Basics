@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:54:06 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/27 14:57:40 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/30 17:53:58 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,11 +34,16 @@ class Cgi
 		ErrorCode			error_code;
 		std::string			body;
 		std::map<std::string, std::string> env_var;
-		
-		void pathCheck();
+		char**	env;
+		char *argv[3];
+		std::string file_path;
+		std::string working_dir;
+		std::string execute_dir;
 		void methodCheck();
 		void initEnv();
 		void executeScript();
+		void runGetScript();
+		void runPostScript();
 		
 };
 

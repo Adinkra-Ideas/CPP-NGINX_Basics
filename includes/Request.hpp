@@ -57,8 +57,10 @@ class Request
 		std::string getRequestBody();
 		bool keepAlive();
 		const ErrorCode&	readStatusCode( void );
+		void setCgi_exe(std::string str);
+		std::string	getCgi_exe();
 
-	//private:
+	private:
 		int first_line();
 		int parse_headers();
 		int prepare_for_body();
@@ -69,6 +71,8 @@ class Request
 		void parseProtocol(std::string str);
 		size_t parse_str_to_int(std::string str);
 		std::string to_lower_case(std::string str);
+		bool not_allowed_char_in_URL();
+		bool not_allowed_char_in_field(std::string value);
 		Status parse_status;
 		std::string buffer;
 		Method method;				//what kind of request: GET,POST, DELETE ...
@@ -77,7 +81,9 @@ class Request
 		std::string query;			// query of the request
 		std::string protocol;		//protocol of the request, HTTP 1.1 for us
 		std::string request_body;	// the body part of the request
+	public:
 		std::map<std::string, std::string> headers;	//place to story everything of the header, like Host, Chunk sending and so on
+	private:
 		size_t	chunk_length; //length of the chunks
 		size_t	body_length; //length of the body
 		size_t	length;
@@ -87,6 +93,7 @@ class Request
 		Chunk chunk_part;
 		std::string body;
 		bool keep_alive;
+		std::string cgi_exe;
 };
 
 #endif

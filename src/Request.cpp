@@ -29,7 +29,8 @@ Request::Request(const Request &copy) :
 	error_code(copy.error_code),
 	chunk_part(copy.chunk_part),
 	body(copy.body),
-	keep_alive(copy.keep_alive)
+	keep_alive(copy.keep_alive),
+	cgi_exe(copy.cgi_exe)
 {
 }
 
@@ -63,6 +64,7 @@ Request & Request::operator=(const Request &assign)
 			this->chunk_part = assign.chunk_part;
 			this->body = assign.body;
 			this->keep_alive = assign.keep_alive;
+			this->cgi_exe = assign.cgi_exe;
 		}
 		return *this;
 }
@@ -85,6 +87,8 @@ const Method&	Request::readMethod( void ) { return method; }
 // Returns the status code of the httprequest
 const ErrorCode&	Request::readStatusCode( void ) { return error_code; }
 
+void Request::setCgi_exe(std::string str) {this->cgi_exe = str;}
+std::string	Request::getCgi_exe() {return this->cgi_exe;}
 
 std::string Request::getRequestBody()
 {
@@ -188,6 +192,11 @@ void Request::parsePath(std::string str)
 			this->path = str.substr(0, index);
 			this->query = str.substr(index + 1);
 		}
+		if (not_allowed_char_in_URL())
+		{
+			std::cout << "url erro" << std::endl;
+			this->error_code = BADREQUEST;
+		}
 	}
 }
 
@@ -210,6 +219,14 @@ int Request::parse_headers()
 		key = this->buffer.substr(start, delimiter - start);
 		//TODO value might have leading whitespace and trailing or not
 		value = this->buffer.substr(delimiter + 2, end - delimiter - 2);
+		if (not_allowed_char_in_field(value))
+		{
+			std::cout << "field erro:" << value << std::endl;
+			this->parse_status = COMPLETED;
+			this->error_code = BADREQUEST;
+			return 1;
+
+		}
 		this->headers[to_lower_case(key)] = value;				// we need to print out what'S stored in headers map object
 		start = end + 2;
 		end = this->buffer.find_first_of(EOL, start);
@@ -222,7 +239,7 @@ int Request::parse_headers()
 	this->parse_status = PREBODY;
 	return (this->error_code);
 }
-//TODO or make all leading char upper?
+
 std::string Request::to_lower_case(std::string str)
 {
 	size_t string_len = str.length();
@@ -348,4 +365,31 @@ void Request::clear()
 	this->parse_status = FIRST_LINE;
 	this->keep_alive = false;
 	this->buffer.clear();
+}
+
+bool Request::not_allowed_char_in_URL()
+{
+	for(std::string::iterator it = this->path.begin(); it != this->path.end(); ++it)
+	{
+		if (!((*it >= '#' && *it <= ';') || (*it >= '?' && *it <= '[') || (*it >= 'a' && *it <= 'z') ||
+       *it == '!' || *it == '=' || *it == ']' || *it == '_' || *it == '~'))
+			return true;			
+	}
+	return false;
+}
+
+bool Request::not_allowed_char_in_field(std::string value)
+{
+	//TODO check this for wrong char ....
+	for(std::string::iterator it = value.begin(); it != value.end(); ++it)
+	{
+    if (!(*it == '!' || (*it >= '#' && *it <= '\'') || *it == '*'|| *it == '+' || *it == '-'  || *it == '.' ||
+       (*it >= '0' && *it <= '9') || (*it >= 'A' && *it <= 'Z') || (*it >= '^' && *it <= '`') ||
+       (*it >= 'a' && *it <= 'z') || *it == '|'))
+	   {
+			return false;
+	   }
+			
+	}
+	return false;	
 }
