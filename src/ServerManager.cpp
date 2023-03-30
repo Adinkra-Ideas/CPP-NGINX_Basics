@@ -208,7 +208,7 @@ namespace http {
 	{
 		char buffer[BUFFER_SIZE + 1] = {'\0'};	// where is BUFFER_SIZE defined? cant find it in ServerManager.hpp
 		int bytes_read;
-
+		
 		// Reading Clients httpRequest details from their 
 		// outbound socket addr FD into buffer
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
@@ -231,7 +231,7 @@ namespace http {
 		else
 		{
 			std::string request(buffer);
-			// std::cout << "Client header : \n" << request << std::endl;
+			//std::cout << "Client header : \n" << request << std::endl;
 			client.updateTime();
 			client.request.parse(request);
 			memset(buffer, 0 , sizeof(buffer));

@@ -3,14 +3,16 @@
 namespace http {
 	Server::Server( void ) : _port(), _ip(), _sockAddrs(), _sockAddrs_len(),
 						 _in_sock(), _name(), _root(),
-						 _max_body(), _error_page(), _locations() {}
+						 _max_body(), _error_page(), _locations(), cgi() {}
 
 	Server::~Server( void ) {}
 
 	Server::Server( const Server& other ) : _port(other._port), _ip(other._ip),
 						_sockAddrs(), _sockAddrs_len(), _in_sock(),
 						_name(other._name), _root(other._root), _max_body(other._max_body),
-						_error_page(other._error_page), _locations(other._locations){
+						_error_page(other._error_page), _locations(other._locations),
+						cgi(other.cgi)
+	{
 		_sockAddrs.sin_family = other._sockAddrs.sin_family;
 		_sockAddrs.sin_port = other._sockAddrs.sin_port;
 		_sockAddrs.sin_addr.s_addr = other._sockAddrs.sin_addr.s_addr;
@@ -30,6 +32,7 @@ namespace http {
 			this->_max_body = other._max_body;
 			this->_error_page = other._error_page;
 			this->_locations = other._locations;
+			this->cgi = other.cgi;
 		}
 		return *this;
 	}
@@ -61,11 +64,13 @@ namespace http {
 	void	Server::writeErrorPage(const std::string& error_page) { _error_page = error_page; }
 	const std::string&	Server::readErrorPage( void ) { return _error_page; }
 
+	void Server::setCgi(const std::map<std::string, std::vector<std::string> > &input) {this->cgi = input;}
+	std::map<std::string, std::vector<std::string> >& Server::getCgi() { return this->cgi;}
+	
 	// ***********		READING AND WRITING METHODS ENDS *********************
 	//////////////////////////////////////////////////////////////////////////
 	// **** 	Returning Reference Address of Member Objects Begins	******
 	std::vector<Location>& Server::refLocations( void ) { return _locations; }
-
 	struct	sockaddr_in& Server::refSockaddrs( void ) { return _sockAddrs; }
 
 	// **** 	Returning Reference Address of Member Objects Ends	******

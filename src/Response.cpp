@@ -36,16 +36,15 @@ namespace http {
 
 	std::string& Response::refResponseCont( void ) { return _response_content; }
 
-	// TODO building the response
 	void Response::buildResponse( void )
 	{
 		std::ostringstream	tmp;
 		ErrorCode			status = NONE;
-
+		
 		if ( _request.readStatusCode() == NONE )
 		{
 			//TODO very simple way of checking if cgi just checking if cgi-bin is in path
-			if (this->_request.readPath().find("/cgi-bin") != std::string::npos)
+			if (isCgiFile(this->_request.readPath()))
 			{
 				Cgi cgi_request(this->_request);
 				status = cgi_request.getErrorCode();
@@ -309,6 +308,26 @@ namespace http {
 			return FOUND;
 		}
 		return NONE;
+	}
+
+	bool Response::isCgiFile(const std::string& file)
+	{
+		if (this->_server->getCgi().empty() || file.find_last_of(".") == std::string::npos)
+			return false;
+		std::map<std::string, std::vector<std::string> >::const_iterator it = this->_server->getCgi().begin();
+		std::map<std::string, std::vector<std::string> >::const_iterator itend = this->_server->getCgi().end();
+		std::string ext = file.substr(file.find_last_of("."));
+		
+		while (it != itend)
+		{
+			if (std::find(it->second.begin(), it->second.end(), ext) != it->second.end())
+			{
+				this->_request.setCgi_exe(it->first);
+				return true;
+			}
+			it++;
+		}
+		return false;
 	}
 
 }	// namespace http

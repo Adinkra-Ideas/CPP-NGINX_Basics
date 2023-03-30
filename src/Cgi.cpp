@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:56:47 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/28 12:23:11 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/30 19:00:45 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,8 +24,6 @@ Cgi::Cgi(const Request &copy) : _request(copy), error_code(NONE), body("")
   	free(cwd);
 	methodCheck();
 	if(!this->error_code)
-		pathCheck();
-	if(!this->error_code)
 		initEnv();
 	if(!this->error_code)
 		executeScript();
@@ -42,6 +40,8 @@ Cgi::~Cgi()
 	}
 	if (argv[0])
 		free(argv[0]);
+	if (argv[1])
+		free(argv[1]);
 }
 
 ErrorCode Cgi::getErrorCode()
@@ -53,10 +53,6 @@ std::string Cgi::getBody()
 	return (this->body);
 }
 
-void Cgi::pathCheck()
-{
-	std::cout << "checking path" << std::endl;
-}
 void Cgi::methodCheck()
 {
 	if (!(this->_request.readMethod() == GET || this->_request.readMethod() == POST))
@@ -64,11 +60,13 @@ void Cgi::methodCheck()
 }
 void Cgi::initEnv()
 {
+	
 	char *cwd = getcwd(NULL, 0);
   	if (!cwd)
     	return ;
   	std::string cwd_ = cwd;
   	free(cwd);
+	this->file_path = cwd_ + "/cgi-bin/" + _request.getCgi_exe();
 	if (this->_request.readMethod() == GET)
 		this->env_var["REQUEST_METHOD"] = "GET";
 	if (this->_request.readMethod() == POST)
@@ -77,10 +75,12 @@ void Cgi::initEnv()
 	this->env_var["PATH_INFO"] = this->_request.readPath();
 	this->env_var["PATH_TRANSLATED"] = cwd_ + this->_request.readPath();
 	this->env_var["REQUEST_URI"] = this->_request.readPath();
-	this->env_var["SCRIPT_NAME"] = this->_request.readPath();
+	this->env_var["SCRIPT_NAME"] = this->_request.getCgi_exe();
 	this->env_var["QUERY_STRING"] = this->_request.readQuery();
 	this->env_var["CONTENT_LENGTH"] = this->_request.headers["content-length"];
 	this->env_var["CONTENT_TYPE"] = this->_request.headers["content-type"];
+	this->env_var["SCRIPT_FILENAME"] = this->file_path;
+	this->env_var["REMOTE_ADDR"] = this->_request.headers["host"];
 	this->env = (char **)calloc(sizeof(char *), this->env_var.size() + 1);
 	if (!this->env)
 	{
@@ -94,9 +94,10 @@ void Cgi::initEnv()
 		env[i] = strdup(tmp.c_str());
 	}
 	size_t index = this->_request.readPath().find_last_of("/");
-  	argv[0] = strdup(this->_request.readPath().substr(index + 1).c_str());
-  	argv[1] = NULL;
-	this->file_path = cwd_ + _request.readPath();
+  	argv[0] = strdup(_request.getCgi_exe().c_str());
+  	argv[1] = strdup(this->_request.readPath().substr(index + 1).c_str());
+	argv[2] = NULL;
+	this->execute_dir = this->working_dir + this->_request.readPath().substr(0, index);
 }
 
 void Cgi::executeScript()
@@ -115,7 +116,8 @@ void Cgi::runGetScript()
 	pid_t pid = fork();
 	if (pid== 0)
 	{
-
+		if (chdir(this->execute_dir.c_str()) == -1)
+			exit(INTERNALSERVERERROR);
 		std::string tmp_file(this->working_dir + "/cgi-bin/tmp");
 		int tmp_fd;
 		mode_t	mode;
@@ -128,7 +130,7 @@ void Cgi::runGetScript()
 		}
 		dup2(tmp_fd,1);
 		execve(this->file_path.c_str(), this->argv, env);
-		exit(1);
+		exit(INTERNALSERVERERROR);
 	}
 	else
 	{

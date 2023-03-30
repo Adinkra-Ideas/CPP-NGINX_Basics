@@ -95,12 +95,11 @@ namespace http {
 		parse_to_str(serv.readRoot(), "\nroot", context);
 		parse_to_str(serv.readErrorPage(), "\nerror_page", context);
 		parse_to_str(max_body_tmp, "\nclient_max_body_size", context);
-
+		parse_for_cgi(serv.getCgi(), context);
 		max_body_to_int(serv.readMaxBody(), max_body_tmp);
 		setup_server_host(serv.refSockaddrs(), serv.readSockAddrLen(), serv.readIp(), serv.readPort());
 
 		servers.push_back(serv);
-
 		print_status(ft_GREEN, "Server Context Parsed Successfully!");
 
 		return true;
@@ -289,5 +288,33 @@ namespace http {
 		if ( (pos = line.find("#")) != std::string::npos )
 			line.erase( line.begin() + pos, line.end() );
 	}
+	void ConfigParser::parse_for_cgi(std::map<std::string, std::vector<std::string> > &cgi_map, std::string &context)
+	{
+		size_t pos = context.find("\ncgi");
+		size_t end_line = context.find(";", pos);
+		size_t split_start;
+		std::vector<std::string> tmp;
+		while ( pos != std::string::npos)
+		{
+			split_start = context.find_first_of("\t", pos);
+			tmp = split_string(context.substr(split_start + 1, end_line - 1 - split_start));
 
+			cgi_map[tmp.back()] = std::vector<std::string>(tmp.begin(), tmp.end() - 1);
+			pos = context.find("\ncgi", end_line);
+			end_line = context.find(";", pos);
+		}
+	}
+	std::vector<std::string> ConfigParser::split_string(std::string str)
+	{
+		std::vector<std::string> result;
+		size_t pos = str.find("\t");
+		while (pos != std::string::npos)
+		{
+			result.push_back(str.substr(0, pos));
+			str.erase(str.begin(), str.begin() + pos + 1);
+			pos = str.find("\t");
+		}
+		result.push_back(str.substr(0, pos));
+		return result;
+	}
 }	// namespace http

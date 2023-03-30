@@ -7,7 +7,7 @@
 # include <string>
 # include <vector>
 # include <fstream>
-
+# include <map>
 # include <sys/socket.h>
 # include <arpa/inet.h>
 
@@ -46,6 +46,8 @@ namespace http {
 		const std::size_t&	readMaxBody( void );
 		void				writeErrorPage(const std::string& error_page);
 		const std::string&	readErrorPage( void );
+		void setCgi(const std::map<std::string, std::vector<std::string> >&str);
+		std::map<std::string, std::vector<std::string> >& getCgi();
 
 		// ***** Returning Reference Address of Member Objects *********
 		std::vector<Location>&	refLocations( void );
@@ -68,6 +70,8 @@ namespace http {
 		std::size_t				_max_body;				// (OPTIONAL)	Limit client body size
 		std::string				_error_page;			// (MANDATORY)	Setup default directory where error pages will be fetched from. 
 		std::vector<Location>	_locations;				// (OPTIONAL)	For setting multiple single-level-deep locations for this Server instance (if present in config file)
+		std::map<std::string, std::vector<std::string> >	cgi;
+	
 	};
 
 }	// namespace ft

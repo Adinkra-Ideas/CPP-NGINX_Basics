@@ -27,6 +27,8 @@ if [ "$REQUEST_METHOD" = "GET" ]; then
     echo "<title>Bash-CGI Example 1</title>"
     echo "</head><body>"
     echo "<h1>Bash-CGI Example 1</h1>"
+    echo "<p> program name arg: $0 </p>"
+    echo "<p> first arg: $1 </p>"
     echo "<p>QUERY_STRING: ${QUERY_STRING}<br>var1=${Var1_Dec}<br>var2=${Var2_Dec}</p>"    # print the values to stdout
 
 else

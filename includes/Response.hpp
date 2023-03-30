@@ -53,6 +53,7 @@ namespace http {
 			ErrorCode			doGetPost( std::string& loc_file_path, const char *method );
 			ErrorCode			check_for_redirections(std::string& loc_file_path,
 								std::string& web_url_path, std::vector<http::Location>::iterator& it);
+			bool isCgiFile(const std::string& file);
 	};
 
 }	// namespace http
