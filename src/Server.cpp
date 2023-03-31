@@ -64,8 +64,8 @@ namespace http {
 	void	Server::writeErrorPage(const std::string& error_page) { _error_page = error_page; }
 	const std::string&	Server::readErrorPage( void ) { return _error_page; }
 
-	void Server::setCgi(const std::map<std::string, std::vector<std::string> > &input) {this->cgi = input;}
-	std::map<std::string, std::vector<std::string> >& Server::getCgi() { return this->cgi;}
+	void Server::setCgi(const std::map<std::string, std::pair<std::string, std::string> > &input) {this->cgi = input;}
+	std::map<std::string, std::pair<std::string, std::string> >& Server::getCgi() { return this->cgi;}
 	
 	// ***********		READING AND WRITING METHODS ENDS *********************
 	//////////////////////////////////////////////////////////////////////////

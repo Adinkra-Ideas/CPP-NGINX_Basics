@@ -1,8 +1,9 @@
 #!/bin/bash
     
 # CORS is the way to communicate, so lets response to the server first
-echo "Content-type: text/html"    # set the data-type we want to use
-echo ""    # we dont need more rules, the empty line initiate this.
+echo -e "Status: 200 OK\r"
+echo -e "Content-type: text/html\r"    # set the data-type we want to use
+echo -e "\r"    # we dont need more rules, the empty line initiate this.
 
 # CORS are set in stone and any communication from now on will be like reading a html-document.
 # Therefor we need to create any stdout in html format!

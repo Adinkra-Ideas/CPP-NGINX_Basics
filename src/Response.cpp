@@ -51,6 +51,7 @@ namespace http {
 			if (isCgiFile(this->_request.readPath()) && _request.readMethod() != DELETE)
 			{
 				Cgi cgi_request(this->_request);
+				cgi_request.parse_body_for_headers();
 				status = cgi_request.getErrorCode();
 				this->_web_page = cgi_request.getBody();
 			}
@@ -421,20 +422,16 @@ namespace http {
 	{
 		if (this->_server->getCgi().empty() || file.find_last_of(".") == std::string::npos)
 			return false;
-		std::map<std::string, std::vector<std::string> >::const_iterator it = this->_server->getCgi().begin();
-		std::map<std::string, std::vector<std::string> >::const_iterator itend = this->_server->getCgi().end();
 		std::string ext = file.substr(file.find_last_of("."));
-		
-		while (it != itend)
+		std::map<std::string, std::pair<std::string, std::string> >::iterator element = this->_server->getCgi().find(ext);
+		if (element == this->_server->getCgi().end())
+			return false;
+		else
 		{
-			if (std::find(it->second.begin(), it->second.end(), ext) != it->second.end())
-			{
-				this->_request.setCgi_exe(it->first);
-				return true;
-			}
-			it++;
+			this->_request.setCgi_exe(element->second.second);
+			this->_request.setCgi_method(element->second.first);
+			return true;
 		}
-		return false;
 	}
 
 }	// namespace http
