@@ -35,6 +35,8 @@ enum Chunk
 class Request
 {
 	public:
+		typedef	typename std::map<std::string, std::string>	headers_map_obj;
+
 		// Constructors
 		Request();
 		Request(const Request &copy);
@@ -50,15 +52,18 @@ class Request
 		ErrorCode getErrorCode();
 		void clear();
 
-		const std::string&	readProtocol( void );
-		const std::string&	readPath( void );
-		const std::string&	readQuery( void );
-		const Method&		readMethod( void );
-		std::string getRequestBody();
-		bool keepAlive();
-		const ErrorCode&	readStatusCode( void );
-		void setCgi_exe(std::string str);
-		std::string	getCgi_exe();
+		const std::string&		readProtocol( void );
+		const std::string&		readPath( void );
+		const std::string&		readQuery( void );
+		const Method&			readMethod( void );
+		std::string 			getRequestBody();
+		bool 					keepAlive();
+		const ErrorCode&		readStatusCode( void );
+		void 					setCgi_exe(std::string str);
+		std::string				getCgi_exe();
+		void setCgi_method(std::string str);
+		std::string	getCgi_method();
+		const headers_map_obj&	readHeaders( void );
 
 	private:
 		int first_line();
@@ -70,7 +75,6 @@ class Request
 		void parsePath(std::string str);
 		void parseProtocol(std::string str);
 		size_t parse_str_to_int(std::string str);
-		std::string to_lower_case(std::string str);
 		bool not_allowed_char_in_URL();
 		bool not_allowed_char_in_field(std::string value);
 		Status parse_status;
@@ -94,6 +98,7 @@ class Request
 		std::string body;
 		bool keep_alive;
 		std::string cgi_exe;
+		std::string cgi_method;
 };
 
 #endif

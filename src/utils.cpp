@@ -24,6 +24,23 @@ namespace http {
 		strftime (buffer,80,"[%Y-%m-%d  %H:%M:%S]   ",timeinfo);
 		return (std::string(buffer));
 	}
+	std::string trim_whitespace(std::string str)
+	{
+		size_t start = str.find_first_not_of(WHITESPACE);
+		size_t end = str.find_last_not_of(WHITESPACE);
+		if (start == std::string::npos)
+			return "";
+		else
+			return str.substr(start, end - start + 1);
+		
+	}
+	std::string to_lower_case(std::string str)
+	{
+		size_t string_len = str.length();
+		for (size_t i = 0; i < string_len; ++i)
+			str[i] = std::tolower(str[i]);
+		return str;
+	}
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
 
 	namespace ft {
@@ -37,6 +54,22 @@ namespace http {
 				return (false);
 
 			return (S_ISDIR(file_stat.st_mode));
+		}
+
+		void	deleteDirectory(std::string& loc_file_path) {
+
+			if (loc_file_path.at(loc_file_path.size() - 1) != '/')
+				loc_file_path.push_back('/');
+
+			struct dirent	*dir;
+			DIR 			*d = opendir(loc_file_path.c_str());
+			if ( d ) {
+				while ( (dir = readdir(d)) != NULL ) {
+					std::remove( (loc_file_path + dir->d_name).c_str() );
+				}
+				std::remove( loc_file_path.c_str() );
+				closedir(d);
+			}
 		}
 
 		// ******************************************************************************
@@ -58,10 +91,10 @@ namespace http {
 				loc_file_path.push_back('/');
 
 			d = opendir(loc_file_path.c_str());
-			if (d) {
+			if ( d ) {
 				loc_file_path.erase(0, root.size());
 				tmp << "<html><head><title> Directory </title></head><body>";
-				while ((dir = readdir(d)) != NULL) {
+				while ( (dir = readdir(d)) != NULL ) {
 					tmp << "<p><a href=\"" << loc_file_path << dir->d_name << "\">" << dir->d_name << "</a></p>";
 				}
 				tmp << "</body></html>";

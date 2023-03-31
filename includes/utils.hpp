@@ -6,13 +6,13 @@
 # define ft_RED			"\033[1;31m"
 # define ft_GREEN		"\033[1;32m"
 # define ft_YELLOW		"\033[1;33m"
-
+# define WHITESPACE		" \n\r\t\f\v"
 # include <iostream>
 # include <vector>
 # include <cstdlib>
 # include <sstream>
 # include <string>
-
+# include <cstdio>		// std::remove
 # include <dirent.h>
 # include <sys/stat.h>
 
@@ -41,7 +41,8 @@ namespace http {
 	void	exit_with_error(const std::string& msg);
 	void	print_status(const char *color, const std::string& msg);
 	std::string getCurrentTime();
-
+	std::string trim_whitespace(std::string str);
+	std::string to_lower_case(std::string str);
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
 	///////////////////////////////////////////////////////////////////////////
 	// **************** MISCELLANEOUS FUNCTIONS BEGINS 		*******************
@@ -49,6 +50,7 @@ namespace http {
 	namespace ft {
 
 		bool		isDirectory(const std::string &path);
+		void		deleteDirectory(std::string& loc_file_path);
 		void		listDirectoryContent(std::string& web_page, std::string loc_file_path, const std::string& root);
 		std::string	translateErrorCode( const ErrorCode& status_code );
 
