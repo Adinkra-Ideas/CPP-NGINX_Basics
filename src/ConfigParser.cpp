@@ -289,7 +289,7 @@ namespace http {
 		if ( (pos = line.find("#")) != std::string::npos )
 			line.erase( line.begin() + pos, line.end() );
 	}
-	void ConfigParser::parse_for_cgi(std::map<std::string, std::vector<std::string> > &cgi_map, std::string &context)
+	void ConfigParser::parse_for_cgi(std::map<std::string, std::pair<std::string, std::string> > &cgi_map, std::string &context)
 	{
 		size_t pos = context.find("\ncgi");
 		size_t end_line = context.find(";", pos);
@@ -299,8 +299,15 @@ namespace http {
 		{
 			split_start = context.find_first_of("\t", pos);
 			tmp = split_string(context.substr(split_start + 1, end_line - 1 - split_start));
-
-			cgi_map[tmp.back()] = std::vector<std::string>(tmp.begin(), tmp.end() - 1);
+			if (tmp.size() != 3 || tmp[0][0] != '.' || !(tmp[1] == "GET" || tmp[1] == "POST"))
+			{
+				exit_with_error("Wrong format on cgi, need: extension, Method, exe name");
+			}
+			// for (std::vector<std::string>::iterator it = tmp.begin(); it != tmp.end(); ++it)
+			// 	std::cout << "in tmp:" << *it << std::endl;
+			if (cgi_map.find(tmp[0])!= cgi_map.end())
+				exit_with_error("Redeclaration of an extension for cgi");
+			cgi_map[tmp[0]] = std::make_pair(tmp[1], tmp[2]);
 			pos = context.find("\ncgi", end_line);
 			end_line = context.find(";", pos);
 		}

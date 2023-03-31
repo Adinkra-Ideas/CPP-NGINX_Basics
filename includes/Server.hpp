@@ -46,8 +46,8 @@ namespace http {
 		const std::size_t&	readMaxBody( void );
 		void				writeErrorPage(const std::string& error_page);
 		const std::string&	readErrorPage( void );
-		void setCgi(const std::map<std::string, std::vector<std::string> >&str);
-		std::map<std::string, std::vector<std::string> >& getCgi();
+		void setCgi(const std::map<std::string, std::pair<std::string, std::string> >&str);
+		std::map<std::string, std::pair<std::string, std::string> >& getCgi();
 
 		// ***** Returning Reference Address of Member Objects *********
 		std::vector<Location>&	refLocations( void );
@@ -70,7 +70,7 @@ namespace http {
 		std::size_t				_max_body;				// (OPTIONAL)	Limit client body size
 		std::string				_error_page;			// (MANDATORY)	Setup default directory where error pages will be fetched from. 
 		std::vector<Location>	_locations;				// (OPTIONAL)	For setting multiple single-level-deep locations for this Server instance (if present in config file)
-		std::map<std::string, std::vector<std::string> >	cgi;
+		std::map<std::string, std::pair<std::string, std::string> >	cgi; //(OPTIONAL) list of extension with what method they allowed and the name of the exe
 	
 	};
 

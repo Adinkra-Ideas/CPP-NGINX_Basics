@@ -59,6 +59,8 @@ class Request
 		const ErrorCode&	readStatusCode( void );
 		void setCgi_exe(std::string str);
 		std::string	getCgi_exe();
+		void setCgi_method(std::string str);
+		std::string	getCgi_method();
 
 	private:
 		int first_line();
@@ -70,7 +72,6 @@ class Request
 		void parsePath(std::string str);
 		void parseProtocol(std::string str);
 		size_t parse_str_to_int(std::string str);
-		std::string to_lower_case(std::string str);
 		bool not_allowed_char_in_URL();
 		bool not_allowed_char_in_field(std::string value);
 		Status parse_status;
@@ -94,6 +95,7 @@ class Request
 		std::string body;
 		bool keep_alive;
 		std::string cgi_exe;
+		std::string cgi_method;
 };
 
 #endif

@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:56:47 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/30 19:00:45 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/31 20:33:30 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,17 +70,24 @@ void Cgi::initEnv()
 	if (this->_request.readMethod() == GET)
 		this->env_var["REQUEST_METHOD"] = "GET";
 	if (this->_request.readMethod() == POST)
+	{
+		this->env_var["CONTENT_LENGTH"] = this->_request.headers["content-length"];
+		this->env_var["CONTENT_TYPE"] = this->_request.headers["content-type"];
 		this->env_var["REQUEST_METHOD"] = "POST";
+	}
+	this->env_var["SERVER_NAME"] = "127.0.0.1";
+	this->env_var["SERVER_PORT"] = "7655";
+	this->env_var["GATEWAY_INTERFACE"] = "CGI/1.1";
 	this->env_var["SERVER_PROTOCOL"] = "HTTP/1.1";
-	this->env_var["PATH_INFO"] = this->_request.readPath();
+	this->env_var["HTTP_HOST"] = this->_request.headers["host"];
+	this->env_var["PATH_INFO"] = cwd_ + this->_request.readPath();
 	this->env_var["PATH_TRANSLATED"] = cwd_ + this->_request.readPath();
 	this->env_var["REQUEST_URI"] = this->_request.readPath();
-	this->env_var["SCRIPT_NAME"] = this->_request.getCgi_exe();
+	this->env_var["SCRIPT_NAME"] = this->file_path;
 	this->env_var["QUERY_STRING"] = this->_request.readQuery();
-	this->env_var["CONTENT_LENGTH"] = this->_request.headers["content-length"];
-	this->env_var["CONTENT_TYPE"] = this->_request.headers["content-type"];
-	this->env_var["SCRIPT_FILENAME"] = this->file_path;
-	this->env_var["REMOTE_ADDR"] = this->_request.headers["host"];
+	//this->env_var["REMOTE_ADDR"] = this->_request.headers["host"];
+	this->env_var["REQUEST_URI"] = cwd_ + this->_request.readPath();
+	this->env_var["SERVER_SOFTWARE"] = "WEBSERV/1.0";
 	this->env = (char **)calloc(sizeof(char *), this->env_var.size() + 1);
 	if (!this->env)
 	{
@@ -94,20 +101,20 @@ void Cgi::initEnv()
 		env[i] = strdup(tmp.c_str());
 	}
 	size_t index = this->_request.readPath().find_last_of("/");
-  	argv[0] = strdup(_request.getCgi_exe().c_str());
-  	argv[1] = strdup(this->_request.readPath().substr(index + 1).c_str());
+  	argv[0] = strdup(this->file_path.c_str());
+  	argv[1] = strdup((cwd_ + this->_request.readPath()).c_str());
 	argv[2] = NULL;
 	this->execute_dir = this->working_dir + this->_request.readPath().substr(0, index);
 }
 
 void Cgi::executeScript()
 {
-	if (this->_request.readMethod() == GET)
+	if (this->_request.readMethod() == GET && this->_request.getCgi_method() == "GET")
 		runGetScript();
-	else if (this->_request.readMethod() == POST)
+	else if (this->_request.readMethod() == POST && this->_request.getCgi_method() == "POST")
 		runPostScript();
 	else
-		this->error_code = INTERNALSERVERERROR;
+		this->error_code = METHODNOTALLOWED;
 
 }
 
@@ -128,8 +135,9 @@ void Cgi::runGetScript()
 			http::print_status(ft_RED, "open file error write");
 			exit(1);
 		}
-		dup2(tmp_fd,1);
-		execve(this->file_path.c_str(), this->argv, env);
+		if(dup2(tmp_fd,1) == -1)
+			exit(INTERNALSERVERERROR);
+		execve(this->argv[0], this->argv, env);
 		exit(INTERNALSERVERERROR);
 	}
 	else
@@ -172,7 +180,7 @@ void Cgi::runGetScript()
 			if (bytes_read <= 0)
 			{
 				close(tmp_fd);
-				std::remove(tmp_file.c_str());
+				//std::remove(tmp_file.c_str());
 				break ;
 			}				
 			this->body += std::string(readbuffer);	
@@ -234,7 +242,7 @@ void Cgi::runPostScript()
 			{
 				break ;
 			}
-		}while(difftime(time(NULL), start) < TIMEOUTTIME);
+		}while(difftime(time(NULL), start) < 10);
 		if (WEXITSTATUS(status)) {
 			http::print_status(ft_RED, "execusion of cgi script failed");
 			this->error_code = INTERNALSERVERERROR;
@@ -268,4 +276,30 @@ void Cgi::runPostScript()
 		}
 		this->error_code = OK;
 	}
+}
+
+void Cgi::parse_body_for_headers()
+{
+	size_t pos;
+	size_t end = this->body.find(EOL);
+	std::string key;
+	std::string value;
+	
+	while ( end != std::string::npos)
+	{
+		if (this->body.find(EOL) == 0)
+		{
+			this->body.erase(0, end + 2);
+			break;
+		}
+		if ((pos = this->body.find(':', 0)) != std::string::npos)
+		{
+			key = this->body.substr(0, pos);
+			value = http::trim_whitespace(this->body.substr(pos + 1, end - pos -1));
+			this->_request.headers[http::to_lower_case(key)] = value;
+		}
+		this->body.erase(0, end + 2);
+		end = this->body.find(EOL);
+	}
+	//TODO erase part if bigger then content-length	
 }

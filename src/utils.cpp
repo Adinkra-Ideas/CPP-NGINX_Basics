@@ -24,6 +24,23 @@ namespace http {
 		strftime (buffer,80,"[%Y-%m-%d  %H:%M:%S]   ",timeinfo);
 		return (std::string(buffer));
 	}
+	std::string trim_whitespace(std::string str)
+	{
+		size_t start = str.find_first_not_of(WHITESPACE);
+		size_t end = str.find_last_not_of(WHITESPACE);
+		if (start == std::string::npos)
+			return "";
+		else
+			return str.substr(start, end - start + 1);
+		
+	}
+	std::string to_lower_case(std::string str)
+	{
+		size_t string_len = str.length();
+		for (size_t i = 0; i < string_len; ++i)
+			str[i] = std::tolower(str[i]);
+		return str;
+	}
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
 
 	namespace ft {

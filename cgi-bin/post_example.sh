@@ -4,8 +4,9 @@ exec 2>/dev/null    # We dont want any error messages be printed to stdout
 trap "response_with_html && exit 0" ERR    # response with an html message when an error occurred and close the script
 
 function response_with_html(){    
-    echo "Content-type: text/html"
-    echo ""
+    echo -e "Status: 200 OK\r"
+    echo -e "Content-type: text/html\r"
+    echo -e "\r"
     echo "<!DOCTYPE html>"
     echo "<html><head>"
     echo "<title>456</title>"
@@ -18,8 +19,9 @@ function response_with_html(){
 }
         
 function response_with_json(){
-    echo "Content-type: application/json"
-    echo ""
+    echo -e "Status: 200 OK\r"
+    echo -e "Content-type: application/json\r"
+    echo -e "\r"
     echo "{\"message\": \"Hello World!\"}"
 }
 

@@ -30,7 +30,8 @@ Request::Request(const Request &copy) :
 	chunk_part(copy.chunk_part),
 	body(copy.body),
 	keep_alive(copy.keep_alive),
-	cgi_exe(copy.cgi_exe)
+	cgi_exe(copy.cgi_exe),
+	cgi_method(copy.cgi_method)
 {
 }
 
@@ -65,6 +66,7 @@ Request & Request::operator=(const Request &assign)
 			this->body = assign.body;
 			this->keep_alive = assign.keep_alive;
 			this->cgi_exe = assign.cgi_exe;
+			this->cgi_method = assign.cgi_method;
 		}
 		return *this;
 }
@@ -89,6 +91,9 @@ const ErrorCode&	Request::readStatusCode( void ) { return error_code; }
 
 void Request::setCgi_exe(std::string str) {this->cgi_exe = str;}
 std::string	Request::getCgi_exe() {return this->cgi_exe;}
+
+void Request::setCgi_method(std::string str) {this->cgi_method = str;}
+std::string	Request::getCgi_method() {return this->cgi_method;}
 
 std::string Request::getRequestBody()
 {
@@ -227,7 +232,7 @@ int Request::parse_headers()
 			return 1;
 
 		}
-		this->headers[to_lower_case(key)] = value;				// we need to print out what'S stored in headers map object
+		this->headers[http::to_lower_case(key)] = value;				// we need to print out what'S stored in headers map object
 		start = end + 2;
 		end = this->buffer.find_first_of(EOL, start);
 	}
@@ -240,13 +245,7 @@ int Request::parse_headers()
 	return (this->error_code);
 }
 
-std::string Request::to_lower_case(std::string str)
-{
-	size_t string_len = str.length();
-	for (size_t i = 0; i < string_len; ++i)
-		str[i] = std::tolower(str[i]);
-	return str;
-}
+
 
 int Request::prepare_for_body()
 {

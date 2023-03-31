@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:54:06 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/30 17:53:58 by hrings           ###   ########.fr       */
+/*   Updated: 2023/03/31 19:51:39 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ class Cgi
 		~Cgi();
 		ErrorCode getErrorCode();
 		std::string getBody();
+		void parse_body_for_headers();
 		
 		
 	private:
