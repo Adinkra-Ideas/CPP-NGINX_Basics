@@ -48,7 +48,7 @@ namespace http {
 		else if ( _request.readStatusCode() == NONE )
 		{
 			//TODO very simple way of checking if cgi just checking if cgi-bin is in path
-			if (isCgiFile(this->_request.readPath()))
+			if (isCgiFile(this->_request.readPath()) && _request.readMethod() != DELETE)
 			{
 				Cgi cgi_request(this->_request);
 				status = cgi_request.getErrorCode();
@@ -58,8 +58,8 @@ namespace http {
 					status = doGetPost(_loc_file_path, "GET");
 			else if ( _request.readMethod() == POST )
 				status = doGetPost(_loc_file_path, "POST");
-			// else if ( _request.readMethod() == DELETE )
-				// status = respondDeleteRequest();
+			else if ( _request.readMethod() == DELETE )
+				status = doDelete();
 			else
 				status = METHODNOTALLOWED;
 		}
@@ -81,12 +81,69 @@ namespace http {
 			<< "Location: " << _location << "\n\n"
 			<< _web_page.c_str();
 
+		_response_content.clear();
 		_response_content = tmp.str();
 
 		_request.clear();
 		_loc_file_path.clear();
 		_web_page.clear();
 		_location.clear();
+		_root_directory.clear();
+	}
+
+	ErrorCode	Response::doDelete() {
+		std::string			delete_me = _request.readPath();
+		std::string			dir_sign = "/";		// z.B. '/'
+		std::size_t			pos;
+
+		// erase spaces at the beginning (if any)
+		pos = delete_me.find_first_not_of(' ');
+		if ( pos)
+			delete_me.erase(0, pos);
+		
+		// put '/' at the beginning if absent
+		if ( delete_me.size() > 0 && delete_me.at(0) != '/' )
+			delete_me.insert(0, 1, '/');
+		
+		// getting ready to search Location context using z.B '/web_url_path' not '/web_url_path/'
+		pos = delete_me.size();
+		if ( pos > 2 && delete_me.at(pos - 1) == '/' )	// >2 meaning at least std::strlen("/x/")
+				delete_me.erase(pos - 1, 1);
+
+		// we will search through the Location contexts to see if web_url_path has
+		// its own specific Location context set. If none found, we will repeat
+		// search using just dir_sign (AKA "/")
+		std::string								*ptr = &delete_me;
+		bool									flag = false;
+		std::vector<http::Location>::iterator	it = _server->refLocations().begin();
+		while ( it != _server->refLocations().end() ) {
+			if ( ! it->readPath().compare(*ptr) && (std::find(it->refMethods().begin(),
+						it->refMethods().end(), "DELETE") != it->refMethods().end()) )		// Location's method must support GET
+				break ;
+			++it;
+			if ( it == _server->refLocations().end() && !flag ) {
+				flag = true;
+				it = _server->refLocations().begin();
+				ptr = &dir_sign;
+			}
+		}
+		if ( it == _server->refLocations().end() )
+			return METHODNOTALLOWED;
+		else {
+			_loc_file_path.append(it->readRoot());
+			_loc_file_path.append(delete_me);
+		}
+		
+		// Delete directory or file
+		if ( ft::isDirectory(_loc_file_path) )
+			ft::deleteDirectory(_loc_file_path);
+		else
+			std::remove(_loc_file_path.c_str());
+
+		// After deleting resource, Redirect client back to referrer or home
+		_location = _request.readHeaders().count("referer") > 0 ? _request.readHeaders().find("referer")->second : "/";
+
+		return OK;
 	}
 
 	// ******************************************************************************
@@ -105,7 +162,6 @@ namespace http {
 		dir_sign = _request.readPath();
 
 		// erase spaces at the beginning (if any)
-		// THIS PART WILL BE REMOVED AFTER A URL PARSER/CLEANER IS IMPLEMENTED
 		pos = dir_sign.find_first_not_of(' ');
 		if ( pos )
 			dir_sign.erase(0, pos);
@@ -121,7 +177,7 @@ namespace http {
 			web_url_path = dir_sign.substr(pos);
 			dir_sign.erase(pos + 1);
 			pos = web_url_path.size();
-			if ( pos > 2 && web_url_path.at(pos - 1) == '/' )
+			if ( pos > 2 && web_url_path.at(pos - 1) == '/' )	// >2 meaning at least std::strlen("/x/")
 				web_url_path.erase(pos - 1, 1);	// we want to search Location context using z.B '/web_url_path' not '/web_url_path/'
 		} else {
 			return NOTFOUND;
@@ -152,18 +208,17 @@ namespace http {
 			_root_directory = it->readRoot();
 		}
 		
-		// backup data received from GET/POST requests, if any
-		// std::cout << "\n\n\nmerer " << it->readUploads() << std::endl;
-		std::ofstream 	_fout;
+		// backingup data received from GET/POST requests, if any
+		std::ofstream 		_fout;
 		std::ostringstream	buff_tmp;
-		buff_tmp << (it->readUploads().size() > 0 ? it->readUploads() : "queryData") << "/" 
+		buff_tmp << (it->readUploads().size() > 0 ? it->readUploads() : "queryData") << "/"
 			<< ( _request.getRequestBody().size() > 0 ? "postQery" : _request.readQuery().size() > 0 ? "getQery" : "");
 		_fout.open(buff_tmp.str().c_str(), std::ios::out | std::ios::app );
 		if (! _fout.good() )
-			print_status(ft_RED, "Please Manually Create Dir for uploads path");
+			print_status(ft_RED, "Skipping GET/POST Query Backup Because Uploads Path Not Created");
 		else {
 			if ( _request.getRequestBody().size() > 0 )				// it's a post request
-				collatePostQuery(_request.getRequestBody(), _fout);
+				collatePostQuery(_request.getRequestBody(), _fout, it->readUploads());
 			else if ( _request.readQuery().size() > 0 )				// it's a get request that has query parameters			
 				_fout << _request.readQuery() << std::endl;
 			_fout.close();
@@ -171,8 +226,8 @@ namespace http {
 
 		// check if any redirection is present
 		ErrorCode	status = NONE;
-		if ( (status = check_for_redirections(loc_file_path, web_url_path, it)) != NONE )
-			return status; 
+		if ( (status = checkForRedirections(loc_file_path, web_url_path, it)) != NONE )
+			return status;
 
 		// Open an input file stream, write to stream from loc_file_path,
 		// if write failed, return error404, else read from stream to 
@@ -185,16 +240,23 @@ namespace http {
 			std::stringstream buff_tmp;
 			buff_tmp << fin.rdbuf();
 			fin.close();
-			// It is at this point that PHP or other backend script are exec'd on the file
-			// exec_php(buff_tmp.str(), loc_file_path);
+			// It is at this point that PHP or other backend scripters are exec'd on the file
 			_web_page.append(buff_tmp.str().c_str());
 			// WE WILL ALSO RECHECK MAXBODY HERE
 		}
 		return OK;
 	}
 
-	// collate query parameters of POST requests and store uploaded files
-	void	Response::collatePostQuery( const std::string& post_query, std::ofstream& _fout ) {
+	// **************************************************************************
+	// collate query parameters of POST requests and store uploaded files.		*
+	// post_query param is a string that holds the content of POST body.		*
+	// _fout param is an outstream already connected to the file where we		*
+	// storing the post queries.												*
+	// uploads_dir param is a string that holds the uploads directory assigned	*
+	// for the route serving this request in config file.						*
+	// **************************************************************************
+	void	Response::collatePostQuery( const std::string& post_query,
+						std::ofstream& _fout, const std::string& uploads_dir ) {
 		std::size_t		pos = 0;
 		std::string		file_name;
 		std::string		tmp;
@@ -215,7 +277,8 @@ namespace http {
 					if ( (pos = post_query.find_first_not_of("\r\n", pos + tmp.size() + 1)) != std::string::npos )
 						_fout << post_query.substr(pos, post_query.find("\r\n", pos) - pos) << "\r\n";
 
-					tmp.insert(0, "queryData/");
+					tmp.insert(0, 1, '/');
+					tmp.insert(0, (uploads_dir.size() > 0 ? uploads_dir.c_str() : "queryData") );
 					std::ofstream 	_uploaded_file;
 					_uploaded_file.open(tmp.c_str(), std::ios::out | std::ios::trunc );
 					if ( _uploaded_file.good() ) {
@@ -254,7 +317,7 @@ namespace http {
 		// Getting file extension stored to tmp
 		if ( (pos = loc_file_path.find_last_of('.')) != std::string::npos )
 			tmp = loc_file_path.substr(pos);
-		
+
 		// retrieving the necessary browser-compatible content-type description
 		tmp = mime::getMimeType(tmp);
 		return tmp;
@@ -285,7 +348,7 @@ namespace http {
 			buff_tmp << "public_html/error_pages/" << status << ".html";
 		else
 			buff_tmp << error_pages.c_str() << "/" << status << ".html";
-		
+
 		fin.open( buff_tmp.str().c_str() );
 		if ( fin.good() ) {
 			buff_tmp.str("");
@@ -307,7 +370,7 @@ namespace http {
 	// But if loc_file_path is a directory which has no/unreadable index file, we 	*
 	// return error 403																*
 	// ******************************************************************************
-	ErrorCode	Response::check_for_redirections(std::string& loc_file_path,
+	ErrorCode	Response::checkForRedirections(std::string& loc_file_path,
 				std::string& web_url_path, std::vector<http::Location>::iterator& it) {
 		std::size_t		pos;
 

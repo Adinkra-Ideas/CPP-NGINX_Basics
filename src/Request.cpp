@@ -90,6 +90,9 @@ const ErrorCode&	Request::readStatusCode( void ) { return error_code; }
 void Request::setCgi_exe(std::string str) {this->cgi_exe = str;}
 std::string	Request::getCgi_exe() {return this->cgi_exe;}
 
+// returns the headers map object
+const Request::headers_map_obj&	Request::readHeaders( void ) { return headers; }
+
 std::string Request::getRequestBody()
 {
 	return (this->body);
@@ -233,7 +236,7 @@ int Request::parse_headers()
 	}
 	// std::cout << "\n\nmap header holds: \n";
 	// for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it )
-	// 	std::cout << "Key =" << (it->first) << "$ value =" << (it->second) << "$" <<std::endl;
+	// 	std::cout << "Key =" << (it->first) << " && value =" << (it->second) << "$" <<std::endl;
 
 	buffer.erase(0, end + 2);
 	this->parse_status = PREBODY;

@@ -12,7 +12,7 @@
 # include <cstdlib>
 # include <sstream>
 # include <string>
-
+# include <cstdio>		// std::remove
 # include <dirent.h>
 # include <sys/stat.h>
 
@@ -49,6 +49,7 @@ namespace http {
 	namespace ft {
 
 		bool		isDirectory(const std::string &path);
+		void		deleteDirectory(std::string& loc_file_path);
 		void		listDirectoryContent(std::string& web_page, std::string loc_file_path, const std::string& root);
 		std::string	translateErrorCode( const ErrorCode& status_code );
 

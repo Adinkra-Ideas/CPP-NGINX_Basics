@@ -4,6 +4,7 @@
     <title>Uploads to NGIN_Y</title>
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
 	<link href="https://drive.google.com/uc?export=view&amp;id=1Xugr6sMP2KHXBkaLNlZFxRnBLNDQkB5R" rel="stylesheet">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <style>
       html, body {
       display: flex;
@@ -62,21 +63,24 @@
   </head>
   <body>
 	<header class="header" style="background-color: DodgerBlue;"><div class="container"><div class="header__inner"><a class="nav__link" href="/">NGIN_Y</a><nav class="nav"><a class="nav__link" href="/">Home</a><a class="nav__link" href="/uploads.html">Uploads</a><a class="nav__link" href="/contact.html">Contact</a><a class="nav__link" href="/delete.html">Delete</a><a class="nav__link" href="#">Account</a></nav></div></div></header>
-	<!-- action="/uploadTo" -->
-	<form method="post" enctype="multipart/form-data">
-      <h3>Upload Something</h3>
-	  <hr/>
       <div class="formcontainer">
-      <div class="container">
-        <label for="uname"><strong>Name</strong></label>
-        <input type="text" placeholder="Enter Name" name="uname" required /><br /><br />
-		<label for="wname"><strong>wName</strong></label>
-        <input type="text" placeholder="Enter wName" name="wname"/><br /><br />
-        <label for="picx"><strong>Picx</strong></label><br />
-        <input type="file" name="picx" required />
-      </div>
-      <button type="submit">Submit Message</button>
-    </form>
+		<h3>Delete Something</h3>
+		<hr/><br />
+		<div class="container">
+			<label for="rloc"><strong>Resource Locator</strong></label>
+			<input type="text" id="toDelete" placeholder="Resource Pathname to Delete" name="rloc" /><br /><br />
+		</div>
+      	<button id="toDeleteBtn">Delete</button>
 	<footer><div class="footer-content"><h3>Copyright 2023 NGIN_Y</h3></div></footer>
+	<!-- <script src="index.js"></script> -->
+	<script>
+		$('#toDeleteBtn').on('click',function(){
+			var delete_me = $('#toDelete').val();
+			// console.log(delete_me);
+			fetch(delete_me,  {
+    			method: 'DELETE'
+  			});
+		});
+	</script>
   </body>
 </html>

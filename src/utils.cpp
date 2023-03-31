@@ -39,6 +39,22 @@ namespace http {
 			return (S_ISDIR(file_stat.st_mode));
 		}
 
+		void	deleteDirectory(std::string& loc_file_path) {
+
+			if (loc_file_path.at(loc_file_path.size() - 1) != '/')
+				loc_file_path.push_back('/');
+
+			struct dirent	*dir;
+			DIR 			*d = opendir(loc_file_path.c_str());
+			if ( d ) {
+				while ( (dir = readdir(d)) != NULL ) {
+					std::remove( (loc_file_path + dir->d_name).c_str() );
+				}
+				std::remove( loc_file_path.c_str() );
+				closedir(d);
+			}
+		}
+
 		// ******************************************************************************
 		// This function reads a directory's content from terminal, then builds it into	*
 		// a browser-displayable-webpage format 										*
@@ -58,10 +74,10 @@ namespace http {
 				loc_file_path.push_back('/');
 
 			d = opendir(loc_file_path.c_str());
-			if (d) {
+			if ( d ) {
 				loc_file_path.erase(0, root.size());
 				tmp << "<html><head><title> Directory </title></head><body>";
-				while ((dir = readdir(d)) != NULL) {
+				while ( (dir = readdir(d)) != NULL ) {
 					tmp << "<p><a href=\"" << loc_file_path << dir->d_name << "\">" << dir->d_name << "</a></p>";
 				}
 				tmp << "</body></html>";
