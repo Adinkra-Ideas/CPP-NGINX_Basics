@@ -2,6 +2,7 @@
 
 namespace http {
 
+
 	// **************** FUNCTIONS FOR PRINTING STATUS BEGINS ******************
 	void	exit_with_error(const std::string& msg) {
 		std::cerr << ft_RED << "Error! " << msg << "!"
@@ -98,20 +99,68 @@ namespace http {
 					return "MOVEDPERMANENTLY";
 				case 302:
 					return "FOUND";
+				case 400:
+					return "BAD REQUEST";
 				case 403:
 					return "FORBIDDEN";
 				case 404:
 					return "NOT FOUND";
 				case 405:
 					return "METHOD NOT ALLOWED";
+				case 408:
+					return "REQUEST TIMEOUT";
 				case 413:
 					return "CONTENT TOO LARGE";
 				case 418:
 					return "LISTDIRECTORYCONTENTS";
+				case 500:
+					return "INTERNAL SERVER ERROR";
+				case 501:
+					return "NOT IMPLEMENTED";
 				case 505:
 					return "HTTP VERSION NOT SUPPORTED";
 				default:
 					return "UNKNOWN RESPONSE";	// Optional
+			}
+		}
+
+		// **************************************************
+		// simply listen for signals using sig_handler()	*
+		// **************************************************
+		void	initSignal( void ) {
+			struct sigaction	signals;
+
+			signals.sa_flags = 0;
+			signals.sa_sigaction = sig_handler;
+			if ( sigaction(SIGINT, &signals, NULL)
+				|| sigaction(SIGQUIT, &signals, NULL) )
+				print_status(ft_RED, "Sigaction Init Error!");
+		}
+
+		void	sig_handler(int sig, siginfo_t *info, void *context)
+		{
+			(void)info;
+			(void)context;
+			if (sig == SIGINT || sig == SIGQUIT)
+			{
+				print_status(ft_RED, "Server Has Received A Termination Signal");
+
+				std::ifstream		fin;
+				std::string			line;
+				fin.open("FD_Registry.txt");
+				if ( ! fin.good() )
+					print_status(ft_RED, "Server Terminated While Socket FDs Were Still Active");
+				else {
+					while ( fin ) {
+						std::getline(fin, line);
+						if ( fin )
+							close( std::atoi(line.c_str()) );
+					}
+					print_status(ft_GREEN, "Server Shut Down Successfully");
+					fin.close();
+					std::remove("FD_Registry.txt");
+					std::exit(0);
+				}
 			}
 		}
 

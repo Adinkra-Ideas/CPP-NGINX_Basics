@@ -37,7 +37,7 @@ namespace http {
 		fin.open(path);
 
 		if ( ! fin.good() )
-			exit_with_error("Failed To Read From User-Submitted Config Filepath"); //here
+			exit_with_error("Failed To Read From User-Submitted Config Filepath");
 
 		print_status(ft_GREEN, "Config File Opened Successfully!");
 		print_status(ft_YELLOW, "Now Parsing Config File...");
