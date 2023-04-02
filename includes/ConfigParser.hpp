@@ -8,8 +8,8 @@
 // Minimum len for a local IP is 7 chars (0.0.0.0)
 # define MIN_HOST_LEN 7
 
-// for converting z.B. 1MiB = 1024kiB
-# define INTtoMEBiBYTES 1024
+// for converting z.B. 1 KBi = 1024 Bytes
+# define INTtoKBi 1024
 
 # include <iostream>
 # include <vector>

@@ -79,7 +79,7 @@ namespace http {
 	// ******************************************************************
 	// Parses 1 server context, then save to servers(param1) using		*
 	// servers.push_back()- The return value is true if successful, 	*
-	// else it returns false if no Location context was parsed.			*
+	// else it exits_with_error() at some point if error occured		*
 	// ******************************************************************
 	bool	ConfigParser::parse_one_server(std::vector<Server>& servers, std::string context) {
 		Server		serv;
@@ -111,7 +111,7 @@ namespace http {
 
 		max_body = (std::atol(max_body_tmp.c_str()) > 0) ? std::atol(max_body_tmp.c_str()) : 0;
 		if (max_body)
-			max_body *= INTtoMEBiBYTES;
+			max_body *= INTtoKBi;
 	}
 
 	// **********************************************************************
