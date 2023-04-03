@@ -10,6 +10,7 @@
 # include <iostream>
 # include <vector>
 # include <cstdlib>
+# include <cstring>
 # include <sstream>
 # include <string>
 # include <cstdio>		// std::remove
@@ -53,7 +54,7 @@ namespace http {
 	namespace ft {
 
 		bool		isDirectory(const std::string &path);
-		void		deleteDirectory(std::string& loc_file_path);
+		void		deleteDirectory(const std::string& loc_file_pat);
 		void		listDirectoryContent(std::string& web_page, std::string loc_file_path, const std::string& root);
 		std::string	translateErrorCode( const ErrorCode& status_code );
 		void		initSignal( void );

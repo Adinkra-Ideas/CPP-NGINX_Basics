@@ -40,7 +40,8 @@ namespace http {
 			return (S_ISDIR(file_stat.st_mode));
 		}
 
-		void	deleteDirectory(std::string& loc_file_path) {
+		void	deleteDirectory(const std::string& loc_file_pat) {
+			std::string	loc_file_path = const_cast<std::string&>(loc_file_pat);
 
 			if (loc_file_path.at(loc_file_path.size() - 1) != '/')
 				loc_file_path.push_back('/');
@@ -49,6 +50,11 @@ namespace http {
 			DIR 			*d = opendir(loc_file_path.c_str());
 			if ( d ) {
 				while ( (dir = readdir(d)) != NULL ) {
+					// std::cout << "\n\nwanna delete: " << (loc_file_path + dir->d_name).c_str() << std::endl;
+					if ( isDirectory((loc_file_path + dir->d_name).c_str())
+						&& std::strcmp(dir->d_name,".")
+						&& std::strcmp(dir->d_name,"..") )
+						deleteDirectory( (loc_file_path + dir->d_name).c_str() );
 					std::remove( (loc_file_path + dir->d_name).c_str() );
 				}
 				std::remove( loc_file_path.c_str() );
