@@ -41,6 +41,15 @@ namespace http {
 			str[i] = std::tolower(str[i]);
 		return str;
 	}
+	size_t str_to_hex(std::string str)
+	{
+		std::stringstream ss;
+		size_t result;
+		ss << std::hex << str;
+		ss >> result;
+
+		return result;
+	}
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
 
 	namespace ft {

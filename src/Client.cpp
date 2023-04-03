@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:12:03 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/16 19:25:08 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/03 13:10:17 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,11 @@ Client::Client(http::Server &server)
 	// this->request = NULL;
 	// this->response = NULL;
 	this->server = server;
+	size_t max_body = server.readMaxBody();
+	if (max_body)
+		this->request.set_max_body_size(max_body);
+	else
+		this->request.set_max_body_size(2147483647);
 }
 
 Client &Client::operator=(const Client &assign)

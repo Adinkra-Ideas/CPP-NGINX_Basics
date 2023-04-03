@@ -128,6 +128,7 @@ namespace http {
 		{
 			if (difftime(time(NULL), iter->second.getupdateTime()) > TIMEOUTTIME)
 			{
+				//TODO send error msg to client
 				print_status(ft_GREEN, "Timeout Closing connection to Client because of timeout");
 				closeConnectionToClient(iter->first);
 			}
@@ -186,7 +187,6 @@ namespace http {
 		// Updating _biggest_fd to consider this client's outgoing Socket FD as well	
 		new_client.setSocket(client_sock);					// storing this client's sock addr to new_client obj
 		this->connected_clients[client_sock] = new_client;	// Adds this ClientsOutboundSockFD=>thisClient'sObject as a Key=>Value to connected_clients map
-		
 		// It might be necessary to store client_address to new_client.client_address at this point
 		
 		msg.str("");
@@ -206,15 +206,17 @@ namespace http {
 	//
 	void ServerManager::readRequest(int fd, Client &client)
 	{
-		char buffer[BUFFER_SIZE + 1] = {'\0'};	// where is BUFFER_SIZE defined? cant find it in ServerManager.hpp
+		char buffer[BUFFER_SIZE + 1] = {'\0'};
 		int bytes_read;
 		
 		// Reading Clients httpRequest details from their 
 		// outbound socket addr FD into buffer
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
+		//std::cout << "Client request : \n" << buffer << std::endl;
 		if (bytes_read == 0)
 		{
-			std::cout << "nothing to read" << std::endl;
+			//TODO change msg
+			//print_status(ft_GREEN, "Closing connection because no activity");
 			removeFDToSet(fd, this->_received_fds);
 			close(fd);
 			this->connected_clients.erase(fd);
@@ -230,8 +232,8 @@ namespace http {
 		}
 		else
 		{
-			std::string request(buffer);
-			// std::cout << "Client header : \n" << request << std::endl;
+			std::string request(buffer, bytes_read);
+			
 			client.updateTime();
 			client.request.parse(request);
 			memset(buffer, 0 , sizeof(buffer));
@@ -250,6 +252,7 @@ namespace http {
 	{
 
 		long bytesSent;
+		//std::cout << "server response: " << std::endl << client.response.refResponseCont() << std::endl;
 		bytesSent = send(client.getSocket(), client.response.refResponseCont().data(), client.response.refResponseCont().size(), 0);
 		if ( bytesSent >= 0 &&
 				static_cast<long unsigned int>(bytesSent) == client.response.refResponseCont().size() )
@@ -259,13 +262,18 @@ namespace http {
 
 		if (!client.request.keepAlive())
 		{
-			print_status(ft_GREEN, "Closing connection to Client because response send");
-			closeConnectionToClient(fd);
+			// print_status(ft_GREEN, "Closing connection to Client because response send");
+			// closeConnectionToClient(fd);
+			removeFDToSet(fd, this->_write_fds);
+			addFDToSet(fd, this->_received_fds);
+			client.request.clear();
+			client.response.refResponseCont().clear();
 		}
 		else
 		{
 			removeFDToSet(fd, this->_write_fds);
 			addFDToSet(fd, this->_received_fds);
+			client.response.refResponseCont().clear();
 			client.request.clear();
 		}
 	}

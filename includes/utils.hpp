@@ -43,6 +43,7 @@ namespace http {
 	std::string getCurrentTime();
 	std::string trim_whitespace(std::string str);
 	std::string to_lower_case(std::string str);
+	size_t str_to_hex(std::string str);
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
 	///////////////////////////////////////////////////////////////////////////
 	// **************** MISCELLANEOUS FUNCTIONS BEGINS 		*******************

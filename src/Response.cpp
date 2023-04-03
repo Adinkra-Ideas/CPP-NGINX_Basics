@@ -42,12 +42,9 @@ namespace http {
 		ErrorCode			status = NONE;
 
 		// parseUrl( _request.readPath() );	// for removing the %%%% and other unformated chars from URL
-
-		if ( _request.readProtocol().compare("HTTP/1.1") )
-			status = HTTPVERSIONNOTSUPPORTED;
-		else if ( _request.readStatusCode() == NONE )
+		//std::cout << "error: " << _request.readStatusCode() << std::endl;
+		if ( _request.readStatusCode() == NONE )
 		{
-			//TODO very simple way of checking if cgi just checking if cgi-bin is in path
 			if (isCgiFile(this->_request.readPath()) && _request.readMethod() != DELETE)
 			{
 				Cgi cgi_request(this->_request);
@@ -76,15 +73,16 @@ namespace http {
 		// Add content-type to stream z.B [Content-Type: text/html]
 		tmp << _request.readProtocol() << " "
 			<< status << " "
-			<< ft::translateErrorCode(status) << "\n"
-			<< "Content-Type: " << getContentType(_loc_file_path, status) << " \n"
-			<< "Content-Length: " << _web_page.size() << " \n"
-			<< "Location: " << _location << "\n\n"
-			<< _web_page.c_str();
+			<< ft::translateErrorCode(status) << EOL //"\n"
+			<< "Content-Type: " << getContentType(_loc_file_path, status) << EOL //" \n"
+			<< "Content-Length: " << _web_page.size() << EOL //" \n"
+			<< "Location: " << _location << EOL << EOL; //"\n\n"
+		if (_request.readMethod() != HEAD)
+			tmp << _web_page.c_str();
 
 		_response_content.clear();
 		_response_content = tmp.str();
-
+		//std::cout << "server response : \n" << _response_content << std::endl;
 		_request.clear();
 		_loc_file_path.clear();
 		_web_page.clear();

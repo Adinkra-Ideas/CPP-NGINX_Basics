@@ -3,7 +3,7 @@
 namespace http {
 	Server::Server( void ) : _port(), _ip(), _sockAddrs(), _sockAddrs_len(),
 						 _in_sock(), _name(), _root(),
-						 _max_body(), _error_page(), _locations(), cgi() {}
+						 _max_body(0), _error_page(), _locations(), cgi() {}
 
 	Server::~Server( void ) {}
 

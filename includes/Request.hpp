@@ -22,7 +22,8 @@ enum Method
 {
 	GET,
 	POST,
-	DELETE
+	DELETE,
+	HEAD
 };
 
 enum Chunk
@@ -46,7 +47,7 @@ class Request
 		
 		// Operators
 		Request & operator=(const Request &assign);
-		int parse(std::string &buffer);
+		void parse(std::string &buffer);
 		bool parsingFinished();
 		std::string getServerName();
 		ErrorCode getErrorCode();
@@ -64,13 +65,14 @@ class Request
 		void setCgi_method(std::string str);
 		std::string	getCgi_method();
 		const headers_map_obj&	readHeaders( void );
+		void set_max_body_size(size_t n);
 
 	private:
-		int first_line();
-		int parse_headers();
-		int prepare_for_body();
-		int parse_body();
-		int parse_chunks();
+		void first_line();
+		void parse_headers();
+		void prepare_for_body();
+		void parse_body();
+		void parse_chunks();
 		void parseMethod(std::string str);
 		void parsePath(std::string str);
 		void parseProtocol(std::string str);
@@ -99,6 +101,7 @@ class Request
 		bool keep_alive;
 		std::string cgi_exe;
 		std::string cgi_method;
+		size_t max_body_size;
 };
 
 #endif
