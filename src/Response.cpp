@@ -58,6 +58,8 @@ namespace http {
 					status = doGetPost("GET");
 			else if ( _request.readMethod() == POST )
 				status = doGetPost("POST");
+			else if ( _request.readMethod() == HEAD )
+				status = doGetPost("HEAD");
 			else if ( _request.readMethod() == DELETE )
 				status = doDelete();
 			else
@@ -77,7 +79,7 @@ namespace http {
 			<< "Content-Type: " << getContentType(_loc_file_path, status) << " \n"
 			<< "Content-Length: " << _web_page.size() << " \n"
 			<< "Location: " << _location << "\n\n"
-			<< _web_page.c_str();
+			<< (( _request.readMethod() != HEAD ) ? _web_page.c_str() : "");
 
 		_response_content.clear();
 		_response_content = tmp.str();
@@ -154,8 +156,9 @@ namespace http {
 		}
 
 		// check if any redirection is present
-		if ( (status = checkForRedirections(_loc_file_path, web_url, it)) != NONE )
-			return status;
+		if ( _request.readMethod() != HEAD )
+			if ( (status = checkForRedirections(_loc_file_path, web_url, it)) != NONE )
+				return status;
 
 		// Open an input file stream, write to stream from _loc_file_path,
 		// if write failed, return error404, else read from stream to 

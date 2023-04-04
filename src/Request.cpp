@@ -177,6 +177,10 @@ void Request::parseMethod(std::string str)
 		this->method = POST;
 	else if (!str.compare("DELETE"))
 		this->method = DELETE;
+	else if (!str.compare("HEAD"))
+		this->method = HEAD;
+	else if (!str.compare("PUT"))
+		this->method = PUT;
 	else 
 		this->error_code = BADREQUEST;
 }
