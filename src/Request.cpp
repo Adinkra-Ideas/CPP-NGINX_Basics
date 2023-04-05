@@ -234,7 +234,7 @@ int Request::parse_headers()
 			return 1;
 
 		}
-		this->headers[to_lower_case(key)] = value;				// we need to print out what'S stored in headers map object
+		this->headers[to_lower_case(key)] = value;
 		start = end + 2;
 		end = this->buffer.find_first_of(EOL, start);
 	}
@@ -351,7 +351,7 @@ int Request::parse_chunks()
 	return (0);
 }
 
-bool Request::parsingFinished()				// I dont fully understand the idea behind this
+bool Request::parsingFinished()
 {
 	return (this->parse_status == COMPLETED);
 }

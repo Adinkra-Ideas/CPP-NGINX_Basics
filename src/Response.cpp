@@ -60,6 +60,8 @@ namespace http {
 				status = doGetPost("POST");
 			else if ( _request.readMethod() == HEAD )
 				status = doGetPost("HEAD");
+			else if ( _request.readMethod() == PUT )
+				status = doGetPost("PUT");
 			else if ( _request.readMethod() == DELETE )
 				status = doDelete();
 			else
@@ -78,8 +80,9 @@ namespace http {
 			<< ft::translateErrorCode(status) << "\n"
 			<< "Content-Type: " << getContentType(_loc_file_path, status) << " \n"
 			<< "Content-Length: " << _web_page.size() << " \n"
-			<< "Location: " << _location << "\n\n"
-			<< (( _request.readMethod() != HEAD ) ? _web_page.c_str() : "");
+			<< "Location: " << (( _request.readMethod() != HEAD && _request.readMethod() != PUT ) ? _location : "")
+			<< "\n\n"
+			<< (( _request.readMethod() != HEAD && _request.readMethod() != PUT ) ? _web_page.c_str() : "");
 
 		_response_content.clear();
 		_response_content = tmp.str();
@@ -131,10 +134,13 @@ namespace http {
 		std::string		web_url_fname;		// filename copied from web_url z.B. "/index.html"
 		ErrorCode		status = NONE;	
 
-		web_url = _request.readPath(); // web_url
+		// copy directory part of web_url to web_url_dir
+		// and filename part of web_url to web_url_fname
+		web_url = _request.readPath();
 		if ( (status = extractDirFromWebUrl(web_url_dir, web_url_fname, web_url)) != NONE )
 			return status;
 
+		// set it to location context of config that will route this request
 		std::vector<http::Location>::iterator	it = _server->refLocations().begin();
 		if ( (status = setIteratorToLocationContext(it, web_url_dir, web_url_fname, method)) != NONE ) // we need to send you file_name
 			return status;
@@ -146,9 +152,9 @@ namespace http {
 			<< ( _request.getRequestBody().size() > 0 ? "postQery" : _request.readQuery().size() > 0 ? "getQery" : "");
 		_fout.open(buff_tmp.str().c_str(), std::ios::out | std::ios::app );
 		if (! _fout.good() )
-			print_status(ft_RED, "Skipping GET/POST Query Backup Because Uploads Path Not Created");
+			print_status(ft_RED, "Skipping GET/POST/PUT Query Backup Because Uploads Path Not Created");
 		else {
-			if ( _request.getRequestBody().size() > 0 )				// it's a post request
+			if ( _request.getRequestBody().size() > 0 )				// it's a post or put request
 				collatePostQuery(_request.getRequestBody(), _fout, it->readUploads());
 			else if ( _request.readQuery().size() > 0 )				// it's a get request that has query parameters			
 				_fout << _request.readQuery() << std::endl;
@@ -156,7 +162,7 @@ namespace http {
 		}
 
 		// check if any redirection is present
-		if ( _request.readMethod() != HEAD )
+		// if ( _request.readMethod() != HEAD )
 			if ( (status = checkForRedirections(_loc_file_path, web_url, it)) != NONE )
 				return status;
 
