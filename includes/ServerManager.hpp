@@ -11,7 +11,7 @@
 # include <vector>
 # include <sstream>
 # include <errno.h>
-// class Server;
+# include <fstream>
 
 // Max Queue used By listen()
 # define MAX_QUEUE 512

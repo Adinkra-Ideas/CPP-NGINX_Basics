@@ -23,7 +23,8 @@ enum Method
 	GET,
 	POST,
 	DELETE,
-	HEAD
+	HEAD,
+	PUT
 };
 
 enum Chunk

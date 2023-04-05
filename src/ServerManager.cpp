@@ -43,6 +43,12 @@ namespace http {
 	{
 		std::ostringstream	msg;
 
+		// we create registry to store each of the FDs allocated to each server context in config
+		std::ofstream 		fout;
+		fout.open("FD_Registry.txt", std::ios::out | std::ios::trunc );
+		if ( ! fout.good() )
+			exit_with_error("Unable to Create FD_Registry.txt File");
+
 		for (std::vector<http::Server>::iterator iter = this->_servers.begin(); iter != this->_servers.end(); ++iter)
 		{
 			iter->bindServerSockAddr();
@@ -55,6 +61,7 @@ namespace http {
 				exit_with_error(msg.str());
 			}
 
+			fout << iter->readInSock() << "\r\n";
 			iter->startListen(MAX_QUEUE);
 
 			// Setting the Socket FD flag to Non-Block Mode
@@ -72,6 +79,8 @@ namespace http {
 				this->_biggest_fd = iter->readInSock();
 			this->_running_servers[iter->readInSock()] = *iter;
 		}
+		fout.close();
+		ft::initSignal();
 	}
 
 	//TODO timeout checker for clients
@@ -233,7 +242,7 @@ namespace http {
 		else
 		{
 			std::string request(buffer, bytes_read);
-			
+			// std::cout << "Client header : \n" << request << std::endl;
 			client.updateTime();
 			client.request.parse(request);
 			memset(buffer, 0 , sizeof(buffer));
@@ -306,4 +315,5 @@ namespace http {
 		if(fd == this->_biggest_fd)
 			this->_biggest_fd--;
 	}
-} // namespace ft
+
+} // namespace http

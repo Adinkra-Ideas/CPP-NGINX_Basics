@@ -10,11 +10,15 @@
 # include <iostream>
 # include <vector>
 # include <cstdlib>
+# include <cstring>
 # include <sstream>
 # include <string>
 # include <cstdio>		// std::remove
 # include <dirent.h>
 # include <sys/stat.h>
+# include <signal.h>
+# include <unistd.h>
+# include <fstream>
 
 // Enum used by Request.hpp && Response.hpp // SHOULD HAVE BEEN INSIDE THE http namespace BUT NOT ALL FILES CURRENTLY SUPPORTS THE namespace
 enum ErrorCode
@@ -28,9 +32,10 @@ enum ErrorCode
 	FORBIDDEN = 403,
 	NOTFOUND = 404,
 	METHODNOTALLOWED = 405,
+	REQUESTTIMEOUT= 408,
 	CONTENTTOOLARGE = 413,
-	INTERNALSERVERERROR = 500,
 	LISTDIRECTORYCONTENTS = 418,
+	INTERNALSERVERERROR = 500,
 	NOTIMPLEMENTED = 501,
 	HTTPVERSIONNOTSUPPORTED = 505
 };
@@ -51,9 +56,11 @@ namespace http {
 	namespace ft {
 
 		bool		isDirectory(const std::string &path);
-		void		deleteDirectory(std::string& loc_file_path);
+		void		deleteDirectory(const std::string& loc_file_pat);
 		void		listDirectoryContent(std::string& web_page, std::string loc_file_path, const std::string& root);
 		std::string	translateErrorCode( const ErrorCode& status_code );
+		void		initSignal( void );
+		void		sig_handler(int sig, siginfo_t *info, void *context);
 
 	}	// namespace ft
 
