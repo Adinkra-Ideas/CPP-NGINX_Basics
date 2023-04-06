@@ -214,8 +214,7 @@ void Request::parsePath(std::string str)
 
 void Request::parse_headers()
 {
-	size_t start = 0;
-	size_t end = this->buffer.find(EOL);
+		size_t end = this->buffer.find(EOL);
 	size_t delimiter;
 	std::string key;
 	std::string value;
@@ -229,9 +228,17 @@ void Request::parse_headers()
 				this->parse_status = PREBODY;
 				break ;
 		}		
-		delimiter = this->buffer.find_first_of(':', start);
-		key = this->buffer.substr(start, delimiter - start);
+		delimiter = this->buffer.find(':');
+		key = this->buffer.substr(0, delimiter);
 		value = http::trim_whitespace(this->buffer.substr(delimiter + 1, end - delimiter - 1));
+		if (not_allowed_char_in_field(value))
+		{
+			std::cout << "field erro:" << value << std::endl;
+			this->parse_status = COMPLETED;
+			this->error_code = BADREQUEST;
+			return ;
+
+		}
 		this->headers[http::to_lower_case(key)] = value;				// we need to print out what'S stored in headers map object
 		this->buffer.erase(0, end + 2);
 		end = this->buffer.find(EOL);
@@ -363,7 +370,7 @@ void Request::parse_chunks()
 	}
 }
 
-bool Request::parsingFinished()				// I dont fully understand the idea behind this
+bool Request::parsingFinished()
 {
 	return (this->parse_status == COMPLETED);
 }

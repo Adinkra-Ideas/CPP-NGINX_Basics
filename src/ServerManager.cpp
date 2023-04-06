@@ -254,7 +254,7 @@ namespace http {
 		else
 		{
 			std::string request(buffer, bytes_read);
-			std::cout << "Client header : \n" << request << "$" << std::endl;
+			//std::cout << "Client header : \n" << request << "$" << std::endl;
 			client.updateTime();
 			client.request.parse(request);
 			memset(buffer, 0 , sizeof(buffer));
@@ -273,7 +273,7 @@ namespace http {
 	{
 
 		long bytesSent;
-		std::cout << "server response: " << std::endl << client.response.refResponseCont() << std::endl;
+		//std::cout << "server response: " << std::endl << client.response.refResponseCont() << std::endl;
 		bytesSent = send(client.getSocket(), client.response.refResponseCont().data(), client.response.refResponseCont().size(), 0);
 		if ( bytesSent > 0 &&
 				static_cast<long unsigned int>(bytesSent) == client.response.refResponseCont().size() )
