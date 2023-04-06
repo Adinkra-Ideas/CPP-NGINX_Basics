@@ -66,6 +66,7 @@ namespace http {
 			return (S_ISDIR(file_stat.st_mode));
 		}
 
+		// for deleting full directory with path loc_file_pat
 		void	deleteDirectory(const std::string& loc_file_pat) {
 			std::string	loc_file_path = const_cast<std::string&>(loc_file_pat);
 
@@ -169,6 +170,12 @@ namespace http {
 				print_status(ft_RED, "Sigaction Init Error!");
 		}
 
+		// ******************************************************************
+		// We created the file FD_Registry.txt when the server was starting	*
+		// here, we're simply reading FD's from it and then deleting it.	*
+		// This function doesn't need documentation. Just know how Signals	*
+		// work.															*
+		// ******************************************************************
 		void	sig_handler(int sig, siginfo_t *info, void *context)
 		{
 			(void)info;

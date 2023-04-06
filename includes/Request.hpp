@@ -3,6 +3,7 @@
 
 # include "WebServer.hpp"
 # include "utils.hpp"
+# include "Types.hpp"
 # include <iostream>
 # include <string>
 # include <map>

@@ -25,15 +25,18 @@ namespace http {
 
 	class ConfigParser {
 	public:
+		// ****** Constructors and Destructor **********
 		ConfigParser(std::vector<Server>& servers, const char *path);
 		~ConfigParser( void );
 		ConfigParser( const ConfigParser& other );
 
+		// ************* Operators *********************
 		ConfigParser& operator= ( const ConfigParser& other );
 
 	private:
 		ConfigParser( void );
 
+		// ******************* Private Methods  *******************************
 		void		parse_config( std::vector<Server>& servers, const char *path );
 		void		erase_comments( std::string& line );
 		bool		find_server_context(std::vector<Server>& servers,  const std::string& block);

@@ -105,7 +105,7 @@ namespace http {
 		return true;
 	}
 
-	// converts the string max_body_tmp to a usable integer stored in _max_body
+	// Simply converts the string max_body_tmp to a usable integer stored in _max_body
 	void	ConfigParser::max_body_to_int(const std::size_t& _max_body, std::string& max_body_tmp) {
 		std::size_t&		max_body = const_cast<std::size_t&>(_max_body);
 
@@ -258,7 +258,7 @@ namespace http {
 	}
 
 	// ********************************************************************************
-	// Calculates the number of hops from context[0] to positio where closing '}'	  *
+	// Calculates the number of hops from context[0] to position where closing '}'	  *
 	//  is found. It is guaranteed that context always has '{' before this function	  *
 	//  is called. Return value is number of hops. But if no matching closing '}'	  *
 	// is found, it returns 0														  *
@@ -312,6 +312,7 @@ namespace http {
 			end_line = context.find(";", pos);
 		}
 	}
+
 	std::vector<std::string> ConfigParser::split_string(std::string str)
 	{
 		std::vector<std::string> result;
@@ -325,4 +326,5 @@ namespace http {
 		result.push_back(str.substr(0, pos));
 		return result;
 	}
+
 }	// namespace http
