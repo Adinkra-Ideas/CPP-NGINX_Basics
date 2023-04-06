@@ -89,11 +89,16 @@ namespace http {
 			msg << "Cannot create socket for host " << _ip;
 			exit_with_error(msg.str());
 		}
-
 		if (bind(_in_sock, (struct sockaddr *)&_sockAddrs, _sockAddrs_len) == -1) {
 			msg << "bind went wrong for host " << _ip;
 			exit_with_error(msg.str());
 		}
+		int optval = 1;
+		socklen_t optlen = sizeof(optval);
+		if(setsockopt(_in_sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
+			msg << "setsockopt failed " << _ip;
+			exit_with_error(msg.str());
+   		}
 
 		msg << "Socket FD " << _in_sock
 			<< " bounded successfully with Socket Address "

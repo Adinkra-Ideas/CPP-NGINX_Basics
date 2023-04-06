@@ -61,12 +61,15 @@ class Request
 		std::string 			getRequestBody();
 		bool 					keepAlive();
 		const ErrorCode&		readStatusCode( void );
+		void					setStatusCode( const ErrorCode error );
 		void 					setCgi_exe(std::string str);
 		std::string				getCgi_exe();
 		void setCgi_method(std::string str);
 		std::string	getCgi_method();
 		const headers_map_obj&	readHeaders( void );
 		void set_max_body_size(size_t n);
+		bool has_request();
+		
 
 	private:
 		void first_line();
@@ -80,6 +83,7 @@ class Request
 		size_t parse_str_to_int(std::string str);
 		bool not_allowed_char_in_URL();
 		bool not_allowed_char_in_field(std::string value);
+		void trailing_chunk();
 		Status parse_status;
 		std::string buffer;
 		Method method;				//what kind of request: GET,POST, DELETE ...
@@ -103,6 +107,7 @@ class Request
 		std::string cgi_exe;
 		std::string cgi_method;
 		size_t max_body_size;
+		bool request_started;
 };
 
 #endif

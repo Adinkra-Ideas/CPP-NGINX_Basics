@@ -4,7 +4,8 @@
 Request::Request() :
 	parse_status(FIRST_LINE),
 	protocol("HTTP/1.1"),
-	keep_alive(true)
+	keep_alive(true),
+	request_started(false)
 {
 	gettimeofday(&this->start_timer, NULL);
 	error_code = NONE;
@@ -33,7 +34,8 @@ Request::Request(const Request &copy) :
 	keep_alive(copy.keep_alive),
 	cgi_exe(copy.cgi_exe),
 	cgi_method(copy.cgi_method),
-	max_body_size(copy.max_body_size)
+	max_body_size(copy.max_body_size),
+	request_started(copy.request_started)
 {
 }
 
@@ -70,6 +72,7 @@ Request & Request::operator=(const Request &assign)
 			this->cgi_exe = assign.cgi_exe;
 			this->cgi_method = assign.cgi_method;
 			this->max_body_size = assign.max_body_size;
+			this->request_started = assign.request_started;
 		}
 		return *this;
 }
@@ -91,7 +94,7 @@ const Method&	Request::readMethod( void ) { return method; }
 
 // Returns the status code of the httprequest
 const ErrorCode&	Request::readStatusCode( void ) { return error_code; }
-
+void	Request::setStatusCode( const ErrorCode error ) { this->error_code = error; }
 void Request::setCgi_exe(std::string str) {this->cgi_exe = str;}
 std::string	Request::getCgi_exe() {return this->cgi_exe;}
 
@@ -116,6 +119,7 @@ bool Request::keepAlive()
 
 void Request::parse(std::string &buffer)
 {
+	request_started = true;
 	this->buffer += buffer;
 	buffer.clear();
 	// parse_status is set to FIRST_LINE as set by request def construc from client.hpp
@@ -211,7 +215,7 @@ void Request::parsePath(std::string str)
 void Request::parse_headers()
 {
 	size_t start = 0;
-	size_t end = this->buffer.find_first_of(EOL, start);
+	size_t end = this->buffer.find(EOL);
 	size_t delimiter;
 	std::string key;
 	std::string value;
@@ -219,32 +223,18 @@ void Request::parse_headers()
 	// to a map of Name=>Value
 	while (end != std::string::npos)
 	{
-		if(this->buffer.find_first_of(EOL, start) == start)
+		if(this->buffer.find(EOL) == 0)
 		{
 				buffer.erase(0, end + 2);
 				this->parse_status = PREBODY;
 				break ;
-		}
-			
+		}		
 		delimiter = this->buffer.find_first_of(':', start);
 		key = this->buffer.substr(start, delimiter - start);
-		//TODO value might have leading whitespace and trailing or not
 		value = http::trim_whitespace(this->buffer.substr(delimiter + 1, end - delimiter - 1));
-		if (not_allowed_char_in_field(value))
-		{
-			http::print_status(ft_RED, "Not allowed char in a field");
-			this->parse_status = COMPLETED;
-			this->error_code = BADREQUEST;
-			return ;
-
-		}
 		this->headers[http::to_lower_case(key)] = value;				// we need to print out what'S stored in headers map object
-		// std::cout << "\n\nmap header holds: \n";
-		// for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it )
-		// 	std::cout << "Key =" << (it->first) << " && value =" << (it->second) << "$" <<std::endl;
-
-		start = end + 2;
-		end = this->buffer.find_first_of(EOL, start);
+		this->buffer.erase(0, end + 2);
+		end = this->buffer.find(EOL);
 	}
 }
 
@@ -294,7 +284,11 @@ void Request::prepare_for_body()
 		this->parse_status = BODY;
 	}
 	else
-		this->parse_status = COMPLETED;
+	{
+			this->parse_status = COMPLETED;
+			this->buffer.clear();	
+	}
+		
 }
 
 size_t Request::parse_str_to_int(std::string str)
@@ -334,13 +328,13 @@ void Request::parse_body()
 void Request::parse_chunks()
 {
 	size_t end;
-	while (this->buffer.find(EOL) != std::string::npos)
+	while ((end = this->buffer.find(EOL)) != std::string::npos)
 	{
 		if(this->chunk_part == CHUNKSIZE)
 		{
-			end = this->buffer.find(EOL);
-			if (end == std::string::npos)
-				return ;
+			
+			// if (end == std::string::npos)
+			// 	return ;
 			this->chunk_length = http::str_to_hex(this->buffer.substr(0, end));
 			this->buffer.erase(0, end + 2);
 			this->chunk_part = CHUNKDATA;
@@ -349,8 +343,8 @@ void Request::parse_chunks()
 		{
 			if (this->chunk_length == 0)
 			{
-				this->parse_status = COMPLETED;
-				//TODO trailing headers?
+				trailing_chunk();
+				return ;
 				this->buffer.clear();
 			}
 			else if(this->buffer.length() >= this->chunk_length)
@@ -410,6 +404,7 @@ void Request::clear()
 			this->cgi_exe.clear();
 			this->cgi_method.clear();
 			//this->max_body_size = assign.max_body_size;
+			this->request_started = false;
 }
 
 bool Request::not_allowed_char_in_URL()
@@ -442,4 +437,25 @@ bool Request::not_allowed_char_in_field(std::string value)
 void Request::set_max_body_size(size_t n)
 {
 	this->max_body_size = n;
+}
+
+bool Request::has_request()
+{
+	return this->request_started;
+}
+
+void Request::trailing_chunk()
+{
+	size_t end = this->buffer.find(EOL);
+	while (end != std::string::npos)
+	{
+		if(this->buffer.find(EOL) == 0)
+		{
+				buffer.clear();
+				this->parse_status = COMPLETED;
+				break ;
+		}		
+		this->buffer.erase(0, end + 2);
+		end = this->buffer.find(EOL);
+	}
 }

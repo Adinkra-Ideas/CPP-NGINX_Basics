@@ -135,11 +135,16 @@ namespace http {
 	{
 		for(std::map<int, Client>::iterator iter = this->connected_clients.begin(); iter != this->connected_clients.end(); ++iter)
 		{
-			if (difftime(time(NULL), iter->second.getupdateTime()) > TIMEOUTTIME)
+			if (difftime(time(NULL), iter->second.getupdateTime()) > TIMEOUTTIME && iter->second.getRequest().has_request())
 			{
 				//TODO send error msg to client
+				iter->second.request.setStatusCode(REQUESTTIMEOUT);
+				iter->second.buildResponse();
+				removeFDToSet(iter->first, this->_received_fds);
+				addFDToSet(iter->first, this->_write_fds);
 				print_status(ft_GREEN, "Timeout Closing connection to Client because of timeout");
-				closeConnectionToClient(iter->first);
+				iter->second.updateTime();
+				// closeConnectionToClient(iter->first);
 			}
 		}
 	}
@@ -184,6 +189,12 @@ namespace http {
 			print_status(ft_RED, "::acceptConnection() Error! A call to Accept() failed");
 			return ;
 		}
+		int optval = 1;
+		socklen_t optlen = sizeof(optval);
+		if(setsockopt(client_sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
+			msg << "setsockopt failed " << client_sock;
+			exit_with_error(msg.str());
+   		}
 		// adding this client's sock addr to rcvd_fds_tmp so that the if() condition
 		// right after the line that called this function from runServers() can pick it up
 		if (fcntl(client_sock, F_SETFL, O_NONBLOCK) < 0)
@@ -221,11 +232,12 @@ namespace http {
 		// Reading Clients httpRequest details from their 
 		// outbound socket addr FD into buffer
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		//std::cout << "Client request : \n" << buffer << std::endl;
+		// std::cout << "Client request : \n" << buffer << std::endl;
+		//std::cout << "bytes read : " << bytes_read << std::endl;
 		if (bytes_read == 0)
 		{
 			//TODO change msg
-			//print_status(ft_GREEN, "Closing connection because no activity");
+			print_status(ft_GREEN, "Closing connection because no activity");
 			removeFDToSet(fd, this->_received_fds);
 			close(fd);
 			this->connected_clients.erase(fd);
@@ -242,7 +254,7 @@ namespace http {
 		else
 		{
 			std::string request(buffer, bytes_read);
-			// std::cout << "Client header : \n" << request << std::endl;
+			std::cout << "Client header : \n" << request << "$" << std::endl;
 			client.updateTime();
 			client.request.parse(request);
 			memset(buffer, 0 , sizeof(buffer));
@@ -261,30 +273,27 @@ namespace http {
 	{
 
 		long bytesSent;
-		//std::cout << "server response: " << std::endl << client.response.refResponseCont() << std::endl;
+		std::cout << "server response: " << std::endl << client.response.refResponseCont() << std::endl;
 		bytesSent = send(client.getSocket(), client.response.refResponseCont().data(), client.response.refResponseCont().size(), 0);
-		if ( bytesSent >= 0 &&
+		if ( bytesSent > 0 &&
 				static_cast<long unsigned int>(bytesSent) == client.response.refResponseCont().size() )
 				print_status(ft_GREEN, "Server Response sent to client");
+		else if (bytesSent == 0)
+		{
+			print_status(ft_GREEN, "Closing connection because no activity");
+			removeFDToSet(fd, this->_write_fds);
+			close(fd);
+			this->connected_clients.erase(fd);
+			return ;
+		}
 		else
 			print_status(ft_RED, "Error sending response to client");
 
-		if (!client.request.keepAlive())
-		{
-			// print_status(ft_GREEN, "Closing connection to Client because response send");
-			// closeConnectionToClient(fd);
-			removeFDToSet(fd, this->_write_fds);
-			addFDToSet(fd, this->_received_fds);
-			client.request.clear();
-			client.response.refResponseCont().clear();
-		}
-		else
-		{
-			removeFDToSet(fd, this->_write_fds);
-			addFDToSet(fd, this->_received_fds);
-			client.response.refResponseCont().clear();
-			client.request.clear();
-		}
+		//always keep the connection alive
+		removeFDToSet(fd, this->_write_fds);
+		addFDToSet(fd, this->_received_fds);
+		client.response.refResponseCont().clear();
+		client.request.clear();
 	}
 
 	void    ServerManager::assign_server_for_response(Client &client) // I thought the processing server has previously being assigned to this client.server() at the point of declaration in acceptConnection()?

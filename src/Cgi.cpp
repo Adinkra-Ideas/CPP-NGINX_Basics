@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:56:47 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/31 20:33:30 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/06 12:35:31 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -156,6 +156,7 @@ void Cgi::runGetScript()
 				break ;
 			}
 		}while(difftime(time(NULL), start) < TIMEOUTTIME);
+		//TODO kill child if timeout
 		if (WEXITSTATUS(status)) {
 			http::print_status(ft_RED, "execusion of cgi script failed");
 			this->error_code = INTERNALSERVERERROR;

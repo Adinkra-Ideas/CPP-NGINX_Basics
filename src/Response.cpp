@@ -132,11 +132,14 @@ namespace http {
 		web_url = _request.readPath(); // web_url
 		if ( (status = extractDirFromWebUrl(web_url_dir, web_url_fname, web_url)) != NONE )
 			return status;
-
 		std::vector<http::Location>::iterator	it = _server->refLocations().begin();
+		// std::cout << "web_url: " << web_url << "$" << std::endl;
+		// std::cout << "web_url_fname: " << web_url_fname << "$" <<std::endl;
+		// std::cout << "web_url_dir: " << web_url_dir << "$" <<std::endl;
+		// std::cout << "_loc_file_path: " << _loc_file_path << "$" <<std::endl;
+		// std::cout << "_root_directory: " << _root_directory << "$" <<std::endl;
 		if ( (status = setIteratorToLocationContext(it, web_url_dir, web_url_fname, method)) != NONE ) // we need to send you file_name
 			return status;
-
 		// backingup data received from GET/POST requests, if any
 		std::ofstream 		_fout;
 		std::ostringstream	buff_tmp;
@@ -229,29 +232,58 @@ namespace http {
 	ErrorCode	Response::setIteratorToLocationContext( std::vector<http::Location>::iterator& it,
 										std::string& path, std::string& fname, const char *method ) {
 		std::string		*ptr = &path;
-		std::string		dir_sign = "/";
-		bool			flag = false;
-
-		while ( it != _server->refLocations().end() ) {
-			if ( ! it->readPath().compare(*ptr) && (std::find(it->refMethods().begin(),
-						it->refMethods().end(), method) != it->refMethods().end()) ) {
-				_loc_file_path = it->readRoot();
-				_root_directory = it->readRoot();
-				if ( flag )		// meaning we wanted a Location "/path" but ended up settling for Location "/". Therefore, '/path' needs to be appended to the path that '/' is rooted to
-					_loc_file_path.append(path);
-				_loc_file_path.append(fname);
-				break ;
-			}
-			++it;
-			if ( it == _server->refLocations().end() && !flag ) {
-				flag = true;
-				it = _server->refLocations().begin();
-				ptr = &dir_sign;
-			}
+		std::string tmp_loc;
+		size_t max_hit_length = 0;
+		std::vector<http::Location>::iterator tmp_iter;
+		if ((*ptr).empty())
+			(*ptr) = "/";
+		while ( it != _server->refLocations().end() ) 
+		{
+			if ((std::find(it->refMethods().begin(), it->refMethods().end(), method) != it->refMethods().end()) &&
+				(*ptr).find(it->readPath()) == 0)
+				{
+					if (max_hit_length < it->readPath().size())
+					{
+						max_hit_length = it->readPath().size();
+						tmp_iter = it;
+						tmp_loc = it->readPath();
+						_root_directory = it->readRoot();
+					}
+				}
+			it++;
 		}
-		if ( it == _server->refLocations().end() )
+		if (max_hit_length == 0)
 			return METHODNOTALLOWED;
-		return NONE;
+		else
+		{
+			_loc_file_path = _root_directory + path.substr(tmp_loc.size()) + fname;
+			it = tmp_iter;
+			return NONE;
+		}
+		// std::string		dir_sign = "/";
+		// bool			flag = false;
+
+		// while ( it != _server->refLocations().end() ) {
+		// 	if ( ! it->readPath().compare(*ptr) && (std::find(it->refMethods().begin(),
+		// 				it->refMethods().end(), method) != it->refMethods().end()) ) {
+		// 		_loc_file_path = it->readRoot();
+		// 		_root_directory = it->readRoot();
+		// 		std::cout << "found: " << it->readRoot() << "on " << *ptr << std::endl;
+		// 		if ( flag )		// meaning we wanted a Location "/path" but ended up settling for Location "/". Therefore, '/path' needs to be appended to the path that '/' is rooted to
+		// 			_loc_file_path.append(path);
+		// 		_loc_file_path.append(fname);
+		// 		break ;
+		// 	}
+		// 	++it;
+		// 	if ( it == _server->refLocations().end() && !flag ) {
+		// 		flag = true;
+		// 		it = _server->refLocations().begin();
+		// 		ptr = &dir_sign;
+		// 	}
+		// }
+		// if ( it == _server->refLocations().end() )
+		// 	return METHODNOTALLOWED;
+		// return NONE;
 	}
 
 	// **************************************************************************
@@ -399,7 +431,7 @@ namespace http {
 
 				if ( ! tmp_local_path.empty() && *tmp_local_path.end() - 1 != '/' )
 					tmp_local_path.push_back('/');
-				tmp_local_path.append( ((it->readIndex().size() > 0) ? it->readIndex() : ";)") );
+				tmp_local_path.append( ((it->readIndex().size() > 0) ? it->readIndex() : ";)") ); // append ;)?
 				fin.open(tmp_local_path.c_str());
 				if ( ! fin.good() ) {
 					_location.clear();
@@ -410,7 +442,7 @@ namespace http {
 						return LISTDIRECTORYCONTENTS;
 					}
 					
-					return FORBIDDEN;
+					return NOTFOUND;
 				}
 			}
 
@@ -425,7 +457,7 @@ namespace http {
 		}
 		return NONE;
 	}
-
+	//TODO check if allowed method
 	bool Response::isCgiFile(const std::string& file)
 	{
 		if (this->_server->getCgi().empty() || file.find_last_of(".") == std::string::npos)
@@ -438,7 +470,7 @@ namespace http {
 		{
 			this->_request.setCgi_exe(element->second.second);
 			this->_request.setCgi_method(element->second.first);
-			return true;
+			return false;
 		}
 	}
 
