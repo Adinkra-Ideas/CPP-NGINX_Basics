@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/25 13:17:10 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/21 20:51:38 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/05 12:49:38 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,8 +24,8 @@
 # include "Server.hpp"
 # include <sys/time.h>
 # include <limits.h>
-#define BUFFER_SIZE 65535
+#define BUFFER_SIZE 2097152
 #define EOL "\r\n"
-#define MAXBODYSIZE 2097152 //would be 2 MB
+#define MAXBODYSIZE 2147483647 //would be 2GB -1, limit on some explorer
 #define TIMEOUTTIME 5
 #endif

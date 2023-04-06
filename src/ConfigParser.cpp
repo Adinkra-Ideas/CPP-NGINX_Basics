@@ -37,7 +37,7 @@ namespace http {
 		fin.open(path);
 
 		if ( ! fin.good() )
-			exit_with_error("Failed To Read From User-Submitted Config Filepath"); //here
+			exit_with_error("Failed To Read From User-Submitted Config Filepath");
 
 		print_status(ft_GREEN, "Config File Opened Successfully!");
 		print_status(ft_YELLOW, "Now Parsing Config File...");
@@ -79,7 +79,7 @@ namespace http {
 	// ******************************************************************
 	// Parses 1 server context, then save to servers(param1) using		*
 	// servers.push_back()- The return value is true if successful, 	*
-	// else it returns false if no Location context was parsed.			*
+	// else it exits_with_error() at some point if error occured		*
 	// ******************************************************************
 	bool	ConfigParser::parse_one_server(std::vector<Server>& servers, std::string context) {
 		Server		serv;
@@ -105,13 +105,13 @@ namespace http {
 		return true;
 	}
 
-	// converts the string max_body_tmp to a usable integer stored in _max_body
+	// Simply converts the string max_body_tmp to a usable integer stored in _max_body
 	void	ConfigParser::max_body_to_int(const std::size_t& _max_body, std::string& max_body_tmp) {
 		std::size_t&		max_body = const_cast<std::size_t&>(_max_body);
 
 		max_body = (std::atol(max_body_tmp.c_str()) > 0) ? std::atol(max_body_tmp.c_str()) : 0;
 		if (max_body)
-			max_body *= INTtoMEBiBYTES;
+			max_body *= INTtoKBi;
 	}
 
 	// **********************************************************************
@@ -258,7 +258,7 @@ namespace http {
 	}
 
 	// ********************************************************************************
-	// Calculates the number of hops from context[0] to positio where closing '}'	  *
+	// Calculates the number of hops from context[0] to position where closing '}'	  *
 	//  is found. It is guaranteed that context always has '{' before this function	  *
 	//  is called. Return value is number of hops. But if no matching closing '}'	  *
 	// is found, it returns 0														  *
@@ -312,6 +312,7 @@ namespace http {
 			end_line = context.find(";", pos);
 		}
 	}
+
 	std::vector<std::string> ConfigParser::split_string(std::string str)
 	{
 		std::vector<std::string> result;
@@ -325,4 +326,5 @@ namespace http {
 		result.push_back(str.substr(0, pos));
 		return result;
 	}
+
 }	// namespace http

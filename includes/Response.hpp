@@ -15,27 +15,30 @@
 # include "Server.hpp"
 # include "Location.hpp"
 # include "utils.hpp"
-# include "Mime.hpp"
+# include "Types.hpp"
 # include "Cgi.hpp"
 
 namespace http {
 
 	class Response {
 	public:
-		// Constructors
-		Response();
+		// ****** Constructors and Destructor **********
+		Response( void );
 		Response(const Response &copy);
-		
-		// Destructor
 		~Response();
 		
-		// Operators
+		// ************* Operators *********************
 		Response & operator=(const Response &assign);
 
+		// ************* Reading & Writing Operations **********
 		void        	setRequest(Request &request);
 		void        	setServer(http::Server &server);
-		void			buildResponse( void );
+
+		// ***** Returning Reference Address of Member Objects *********
 		std::string&	refResponseCont( void );
+
+		// ******************* The Rest  *******************************
+		void			buildResponse( void );
 
 	private:
 		Request				_request;			// object holding the parsed requestheader
@@ -44,20 +47,24 @@ namespace http {
 		std::string			_web_page;				// where the returned webpage will be stored
 		std::string     	_response_content;		// where the http response will be stored
 		std::string			_location;				// Web address where the client's data eventually got fetched from (after all the redirections)
-		std::string			_root_directory;		// directory used as root by the root(aka location context) servicing this request from _server config
+		std::string			_root_directory;		// directory used as root by the route(aka location context) servicing this request from _server config
 		// std::string			_key_value;			// if a GET request has key=>values appended, they will be backed up to this string
 
-		// private functions/methods
+		// ******************* The Rest  *******************************
 		std::string			translateErrorCode( const ErrorCode& status_code );
 		std::string			getContentType( const std::string& loc_file_path, const ErrorCode& status );
 		void				buildErrorCodePage(std::string& web_page, ErrorCode& status);
-		ErrorCode			doGetPost( std::string& loc_file_path, const char *method );
-		ErrorCode			doDelete();
-		ErrorCode			checkForRedirections(std::string& loc_file_path,
-								std::string& web_url_path, std::vector<http::Location>::iterator& it);
+		ErrorCode			doGetPost( const char *method );
+		ErrorCode			doDelete( void );
+		ErrorCode			checkForRedirections(std::string& loc_file_path, std::string& web_url_path,
+															std::vector<http::Location>::iterator& it);
 		bool 				isCgiFile(const std::string& file);
+		ErrorCode			extractDirFromWebUrl( std::string& request_dir,
+												std::string& request_fname, std::string& request_path );
+		ErrorCode			setIteratorToLocationContext( std::vector<http::Location>::iterator& it,
+											std::string& path, std::string& fname, const char *method );
 		void				collatePostQuery( const std::string& post_query,
-								std::ofstream& _fout, const std::string& uploads_dir  );
+												std::ofstream& _fout, const std::string& uploads_dir  );
 	};
 
 }	// namespace http

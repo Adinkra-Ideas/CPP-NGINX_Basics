@@ -3,6 +3,7 @@
 
 # include "WebServer.hpp"
 # include "utils.hpp"
+# include "Types.hpp"
 # include <iostream>
 # include <string>
 # include <map>
@@ -22,7 +23,9 @@ enum Method
 {
 	GET,
 	POST,
-	DELETE
+	DELETE,
+	HEAD,
+	PUT
 };
 
 enum Chunk
@@ -46,7 +49,7 @@ class Request
 		
 		// Operators
 		Request & operator=(const Request &assign);
-		int parse(std::string &buffer);
+		void parse(std::string &buffer);
 		bool parsingFinished();
 		std::string getServerName();
 		ErrorCode getErrorCode();
@@ -59,24 +62,29 @@ class Request
 		std::string 			getRequestBody();
 		bool 					keepAlive();
 		const ErrorCode&		readStatusCode( void );
+		void					setStatusCode( const ErrorCode error );
 		void 					setCgi_exe(std::string str);
 		std::string				getCgi_exe();
 		void setCgi_method(std::string str);
 		std::string	getCgi_method();
 		const headers_map_obj&	readHeaders( void );
+		void set_max_body_size(size_t n);
+		bool has_request();
+		
 
 	private:
-		int first_line();
-		int parse_headers();
-		int prepare_for_body();
-		int parse_body();
-		int parse_chunks();
+		void first_line();
+		void parse_headers();
+		void prepare_for_body();
+		void parse_body();
+		void parse_chunks();
 		void parseMethod(std::string str);
 		void parsePath(std::string str);
 		void parseProtocol(std::string str);
 		size_t parse_str_to_int(std::string str);
 		bool not_allowed_char_in_URL();
 		bool not_allowed_char_in_field(std::string value);
+		void trailing_chunk();
 		Status parse_status;
 		std::string buffer;
 		Method method;				//what kind of request: GET,POST, DELETE ...
@@ -99,6 +107,8 @@ class Request
 		bool keep_alive;
 		std::string cgi_exe;
 		std::string cgi_method;
+		size_t max_body_size;
+		bool request_started;
 };
 
 #endif

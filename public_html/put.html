@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Uploads to NGIN_Y</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
+	<link href="https://drive.google.com/uc?export=view&amp;id=1Xugr6sMP2KHXBkaLNlZFxRnBLNDQkB5R" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<style>
+      html, body {
+      display: flex;
+      justify-content: center;
+      font-family: Roboto, Arial, sans-serif;
+      font-size: 15px;
+      }
+      form {
+      border: 5px solid #f1f1f1;
+      }
+      input[type=text], input[type=password] {
+      width: 100%;
+      padding: 16px 8px;
+      margin: 8px 0;
+      display: inline-block;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      }
+      button {
+      background-color: #8ebf42;
+      color: white;
+      padding: 14px 0;
+      margin: 10px 0;
+      border: none;
+      cursor: grabbing;
+      width: 100%;
+      }
+      h3 {
+      text-align:center;
+      font-size:14;
+      }
+      button:hover {
+      opacity: 0.8;
+      }
+      .formcontainer {
+      text-align: left;
+      margin: 24px 50px 12px;
+      }
+      .container {
+      padding: 16px 0;
+      text-align:left;
+      }
+      span.psw {
+      float: right;
+      padding-top: 0;
+      padding-right: 15px;
+      }
+      /* Change styles for span on extra small screens */
+      @media screen and (max-width: 300px) {
+		span.psw {
+			display: block;
+			float: none;
+			}
+	  }
+    </style>
+  </head>
+  <body>
+	<header class="header" style="background-color: DodgerBlue;"><div class="container"><div class="header__inner"><a class="nav__link" href="/">NGIN_Y</a><nav class="nav"><a class="nav__link" href="/">Home</a><a class="nav__link" href="/uploads.html">Uploads</a><a class="nav__link" href="/contact.html">Contact</a><a class="nav__link" href="/delete.html">Delete</a><a class="nav__link" href="#">Account</a></nav></div></div></header>
+	<!-- action="/uploadTo" -->
+	<form id="i_form" method="bla bla bla" action="public_html" enctype="multipart/form-data">
+      <h3>Upload Something</h3>
+	  <hr/>
+      <div class="formcontainer">
+      <div class="container">
+		<!-- name of file for saving this PUT body on server -->
+		<input id="i_BodyName" type="hidden" value="putBody"/>
+
+        <label for="uname"><strong>Name</strong></label>
+        <input id="i_uname" type="text" placeholder="Enter Name" name="uname" required /><br /><br />
+		<label for="wname"><strong>wName</strong></label>
+        <input id="i_wname" type="text" placeholder="Enter wName" name="wname"/><br /><br />
+        <label for="picx"><strong>Picx</strong></label><br />
+        <input id="i_file" type="file" name="put_picx" required />
+      </div>
+
+	  <!-- making sure the button does'nt submit. Only sendPut() can submit -->
+      <button type="submit" id="toPutBtn" value="send">Send</button>
+    </form>
+	<footer><div class="footer-content"><h3>Copyright 2023 NGIN_Y</h3></div></footer>
+	<script>
+		// execute once the DOM has loaded
+		$( function() {
+			// wire up button click event
+			$("#toPutBtn").on('click', function(event) {
+				event.preventDefault(); // cancel default (form submit) behavior
+
+				// The action attribute provides the request URL
+				var url = $('#i_form').attr( "action" );
+
+				// name of file for saving this PUT request body on server
+				var bodyName = $('#i_BodyName').val();
+
+				var uName = $('#i_uname').val();
+				var wName = $('#i_wname').val();
+
+				// retrieve uploaded file decoded to base64 
+				var myFile = $('#i_file').prop('files');
+
+				// build FormData() object
+				var form = document.getElementById("i_form");
+				var submitter = document.querySelector("button[value=send]");
+				var formData = new FormData(form, submitter);
+
+			// try {
+				var response = fetch(url, {
+					method: "PUT",
+					body: formData,
+				});
+			// } catch (error) {
+			// 	console.error("Error:", error);
+			// }
+
+				// return false so this function should bounce back to caller so form dont get
+				// submitted after the lock placed by event.preventDefault() expires due to 
+				// function running out of scope
+				return false;	
+			} );
+
+		} );
+
+		// $('#toPutBtn').on('click', function( event ){
+	</script>
+  </body>
+</html>

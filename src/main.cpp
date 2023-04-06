@@ -14,10 +14,10 @@
 //TODO check when to close fd of client
 int main( int argc, char **argv )
 {
-	http::ServerManager				master;
+	http::ServerManager		master;
 
-	if (argc != 2)
-		http::exit_with_error("Not Enough CMD Parameters!");
+	if ( argc != 2 )
+		http::exit_with_error("Wrong CMD Parameter Count!");
 
 	master.parseConfig(argv[1]);	
 	master.setupServers();

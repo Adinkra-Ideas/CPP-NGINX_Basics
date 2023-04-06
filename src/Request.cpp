@@ -3,7 +3,9 @@
 // Constructors
 Request::Request() :
 	parse_status(FIRST_LINE),
-	keep_alive(false)
+	protocol("HTTP/1.1"),
+	keep_alive(true),
+	request_started(false)
 {
 	gettimeofday(&this->start_timer, NULL);
 	error_code = NONE;
@@ -31,7 +33,9 @@ Request::Request(const Request &copy) :
 	body(copy.body),
 	keep_alive(copy.keep_alive),
 	cgi_exe(copy.cgi_exe),
-	cgi_method(copy.cgi_method)
+	cgi_method(copy.cgi_method),
+	max_body_size(copy.max_body_size),
+	request_started(copy.request_started)
 {
 }
 
@@ -67,6 +71,8 @@ Request & Request::operator=(const Request &assign)
 			this->keep_alive = assign.keep_alive;
 			this->cgi_exe = assign.cgi_exe;
 			this->cgi_method = assign.cgi_method;
+			this->max_body_size = assign.max_body_size;
+			this->request_started = assign.request_started;
 		}
 		return *this;
 }
@@ -81,6 +87,8 @@ const std::string&	Request::readProtocol( void ) { return protocol; }
 // Returns the httpRequest path to doc requested by client
 const std::string&	Request::readPath( void ) { return path; }
 
+// Returns the string after the first occurence of '?' (ifExist) 
+// from path to doc requested by client
 const std::string&	Request::readQuery( void ) { return this->query; }
 
 // Returns the content of the _method (AKA GET, POST, or DELETE)
@@ -88,7 +96,7 @@ const Method&	Request::readMethod( void ) { return method; }
 
 // Returns the status code of the httprequest
 const ErrorCode&	Request::readStatusCode( void ) { return error_code; }
-
+void	Request::setStatusCode( const ErrorCode error ) { this->error_code = error; }
 void Request::setCgi_exe(std::string str) {this->cgi_exe = str;}
 std::string	Request::getCgi_exe() {return this->cgi_exe;}
 
@@ -111,67 +119,61 @@ bool Request::keepAlive()
 	//////////////////////////////////////////////////////////////////////////
 	// ***********	XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX BEGINS********************
 
-//TODO parsing the request
-int Request::parse(std::string &buffer)
+void Request::parse(std::string &buffer)
 {
-	size_t error_lvl;
+	request_started = true;
 	this->buffer += buffer;
 	buffer.clear();
-	// parse_status is set to FIRST_LINE as set by request def construc from client.hpp
+	// parse_status is set to FIRST_LINE as set by Request default constructor from client.hpp
 	// then if first line of client request was parsed successfully, parse_status is set to HEADERS
 	if (parse_status == FIRST_LINE)
-		error_lvl = first_line();
+		first_line();
 	if (parse_status == HEADERS)
-		error_lvl = parse_headers();
+		parse_headers();
 	if (parse_status == PREBODY)
-		error_lvl = prepare_for_body();
+		prepare_for_body();
 	if (parse_status == BODY)
-		error_lvl = parse_body();
+		parse_body();
 	if (parse_status == CHUNK)			// what does chunk do/mean?
-		error_lvl = parse_chunks();
-	return (error_lvl);
+		parse_chunks();
 }
 
 //TODO also check total length of the request
-int Request::first_line()
+void Request::first_line()
 {
 	//TODO more checks if line is ok
-	if (this->buffer.find(EOL) != std::string::npos)   // EOL == '\n'
+	if (this->buffer.find(EOL) != std::string::npos)   // EOL == '\r\n'
 	{
 		size_t start = 0;
 		size_t end = this->buffer.find_first_of(" ", start);
-		parseMethod(this->buffer.substr(start, end)); //here
+		parseMethod(this->buffer.substr(start, end));
 		if (this->error_code)
-			return (this->error_code);
+			return ;
 		start = end + 1;
 		end = this->buffer.find_first_of(" ", start);
 		parsePath(this->buffer.substr(start, end - start));
 		if (this->error_code)
-			return (this->error_code);
+			return ;
 		start = end + 1;
 		end = this->buffer.find_first_of(EOL, start);
 		parseProtocol(this->buffer.substr(start, end - start));
 		if (this->error_code)
-			return (this->error_code);
+			return ;
 		this->buffer.erase(0, end + 2);
 		this->parse_status = HEADERS;
-		return (this->error_code);
 	}
-	else
-	{
-		this->parse_status = COMPLETED;
-		this->error_code = BADREQUEST;
-		return (this->error_code);
-	}
+	// else
+	// {
+	// 	this->parse_status = COMPLETED;
+	// 	this->error_code = BADREQUEST;
+	// }
 	
 	
 }
 void Request::parseProtocol(std::string str)
 {
-	if (!str.compare("HTTP/1.1"))
-		this->protocol = "HTTP/1.1";
-	else
-		this->error_code = BADREQUEST;
+	if (str.compare("HTTP/1.1"))
+		this->error_code = HTTPVERSIONNOTSUPPORTED;
 }
 
 void Request::parseMethod(std::string str)
@@ -182,13 +184,17 @@ void Request::parseMethod(std::string str)
 		this->method = POST;
 	else if (!str.compare("DELETE"))
 		this->method = DELETE;
+	else if (!str.compare("HEAD"))
+		this->method = HEAD;
+	else if (!str.compare("PUT"))
+		this->method = PUT;
 	else 
 		this->error_code = BADREQUEST;
 }
 
 void Request::parsePath(std::string str)
 {
-	if (str.at(0) != '/')
+	if (str.at(0) != '/' || str.size() <= 0 )
 		this->error_code = BADREQUEST;
 	else
 	{
@@ -202,18 +208,15 @@ void Request::parsePath(std::string str)
 		}
 		if (not_allowed_char_in_URL())
 		{
-			std::cout << "url erro" << std::endl;
+			http::print_status(ft_RED, "Not allowed char in the url");
 			this->error_code = BADREQUEST;
 		}
 	}
 }
 
-int Request::parse_headers()
+void Request::parse_headers()
 {
-	//TODO parse header for atleast Host
-	//TODO extra stuff to parse for: Transfer-Encoding, Content-Length, Connection
-	size_t start = 0;
-	size_t end = this->buffer.find_first_of(EOL, start);
+		size_t end = this->buffer.find(EOL);
 	size_t delimiter;
 	std::string key;
 	std::string value;
@@ -221,36 +224,32 @@ int Request::parse_headers()
 	// to a map of Name=>Value
 	while (end != std::string::npos)
 	{
-		if(this->buffer.find_first_of(EOL, start) == start)
-			break ;
-		delimiter = this->buffer.find_first_of(':', start);
-		key = this->buffer.substr(start, delimiter - start);
-		//TODO value might have leading whitespace and trailing or not
-		value = this->buffer.substr(delimiter + 2, end - delimiter - 2);
+		if(this->buffer.find(EOL) == 0)
+		{
+				buffer.erase(0, end + 2);
+				this->parse_status = PREBODY;
+				break ;
+		}		
+		delimiter = this->buffer.find(':');
+		key = this->buffer.substr(0, delimiter);
+		value = http::trim_whitespace(this->buffer.substr(delimiter + 1, end - delimiter - 1));
 		if (not_allowed_char_in_field(value))
 		{
 			std::cout << "field erro:" << value << std::endl;
 			this->parse_status = COMPLETED;
 			this->error_code = BADREQUEST;
-			return 1;
+			return ;
 
 		}
 		this->headers[http::to_lower_case(key)] = value;				// we need to print out what'S stored in headers map object
-		start = end + 2;
-		end = this->buffer.find_first_of(EOL, start);
+		this->buffer.erase(0, end + 2);
+		end = this->buffer.find(EOL);
 	}
-	// std::cout << "\n\nmap header holds: \n";
-	// for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it )
-	// 	std::cout << "Key =" << (it->first) << " && value =" << (it->second) << "$" <<std::endl;
-
-	buffer.erase(0, end + 2);
-	this->parse_status = PREBODY;
-	return (this->error_code);
 }
 
 
 
-int Request::prepare_for_body()
+void Request::prepare_for_body()
 {
 	//TODO check if header is ok
 	//TODO prepare chunk receiving
@@ -258,7 +257,7 @@ int Request::prepare_for_body()
 	{
 		this->error_code = BADREQUEST;
 		this->parse_status = COMPLETED;
-		return (this->error_code);
+		return ;
 	}
 	std::map<std::string, std::string>::iterator iter = this->headers.find("connection");
 	if (iter != this->headers.end())
@@ -277,31 +276,28 @@ int Request::prepare_for_body()
 	{
 		try
 		{
-			this->body_length = parse_str_to_int(this->headers["content-length"]);	
+			this->body_length = parse_str_to_int(this->headers["content-length"]);
+			if(this->body_length > this->max_body_size)
+			{
+				this->error_code = CONTENTTOOLARGE;
+				this->parse_status = COMPLETED;
+				return ;
+			}
 		}
 		catch(const std::exception& e)
 		{
 			this->error_code = BADREQUEST;
 			this->parse_status = COMPLETED;
-			return (this->error_code);
+			return ;
 		}
 		this->parse_status = BODY;
 	}
 	else
 	{
-		this->parse_status = COMPLETED;
+			this->parse_status = COMPLETED;
+			this->buffer.clear();	
 	}
-	return (this->error_code);
-	if (this->headers.find("Host") == this->headers.end() || this->headers["Host"].empty())
-	{
-		this->error_code = BADREQUEST;
-		this->parse_status = COMPLETED;
-	}
-	else
-	{
-		this->parse_status = COMPLETED;
-	}
-	return (this->error_code);
+		
 }
 
 size_t Request::parse_str_to_int(std::string str)
@@ -323,7 +319,7 @@ size_t Request::parse_str_to_int(std::string str)
 	return (result);
 }
 
-int Request::parse_body()
+void Request::parse_body()
 {
 	this->body += this->buffer;
 	this->buffer.clear();
@@ -336,17 +332,47 @@ int Request::parse_body()
 		this->parse_status = COMPLETED;
 		this->error_code = 	BADREQUEST;
 	}
-	return (this->error_code);
 }
 
-int Request::parse_chunks()
+void Request::parse_chunks()
 {
-	std::cout << "chunk parsing" << std::endl;
-	this->parse_status = COMPLETED;
-	return (0);
+	size_t end;
+	while ((end = this->buffer.find(EOL)) != std::string::npos)
+	{
+		if(this->chunk_part == CHUNKSIZE)
+		{
+			
+			// if (end == std::string::npos)
+			// 	return ;
+			this->chunk_length = http::str_to_hex(this->buffer.substr(0, end));
+			this->buffer.erase(0, end + 2);
+			this->chunk_part = CHUNKDATA;
+		}
+		if(this->chunk_part == CHUNKDATA)
+		{
+			if (this->chunk_length == 0)
+			{
+				trailing_chunk();
+				return ;
+				this->buffer.clear();
+			}
+			else if(this->buffer.length() >= this->chunk_length)
+			{
+				this->body += this->buffer.substr(0, this->chunk_length);
+				if (this->body.length() > this->max_body_size)
+				{
+					this->error_code = CONTENTTOOLARGE;
+					this->parse_status = COMPLETED;
+					return ;
+				}
+				this->buffer.erase(0, this->chunk_length + 2);
+				this->chunk_part = CHUNKSIZE;
+			}
+		}
+	}
 }
 
-bool Request::parsingFinished()				// I dont fully understand the idea behind this
+bool Request::parsingFinished()
 {
 	return (this->parse_status == COMPLETED);
 }
@@ -363,10 +389,31 @@ ErrorCode Request::getErrorCode()
 
 void Request::clear()
 {
-	this->error_code = NONE;
+	// this->error_code = NONE;
+	// this->parse_status = FIRST_LINE;
+	
 	this->parse_status = FIRST_LINE;
-	this->keep_alive = false;
-	this->buffer.clear();
+			this->buffer.clear();
+			//this->method = assign.method;
+			this->serverName.clear();
+			this->path.clear();
+			this->query.clear();
+			//this->protocol.clear();
+			this->request_body.clear();
+			this->headers.clear();
+			this->chunk_length = 0;
+			this->body_length = 0;
+			this->length = 0;
+			//this->start_timer = assign.start_timer;
+			//this->last_timer = assign.last_timer;
+			this->error_code = NONE;
+			this->chunk_part = CHUNKSIZE;
+			this->body.clear();
+			this->keep_alive = true;
+			this->cgi_exe.clear();
+			this->cgi_method.clear();
+			//this->max_body_size = assign.max_body_size;
+			this->request_started = false;
 }
 
 bool Request::not_allowed_char_in_URL()
@@ -394,4 +441,30 @@ bool Request::not_allowed_char_in_field(std::string value)
 			
 	}
 	return false;	
+}
+
+void Request::set_max_body_size(size_t n)
+{
+	this->max_body_size = n;
+}
+
+bool Request::has_request()
+{
+	return this->request_started;
+}
+
+void Request::trailing_chunk()
+{
+	size_t end = this->buffer.find(EOL);
+	while (end != std::string::npos)
+	{
+		if(this->buffer.find(EOL) == 0)
+		{
+				buffer.clear();
+				this->parse_status = COMPLETED;
+				break ;
+		}		
+		this->buffer.erase(0, end + 2);
+		end = this->buffer.find(EOL);
+	}
 }
