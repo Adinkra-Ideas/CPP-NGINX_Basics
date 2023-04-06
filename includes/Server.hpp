@@ -53,7 +53,7 @@ namespace http {
 		std::vector<Location>&	refLocations( void );
 		struct	sockaddr_in&	refSockaddrs( void );
 
-		// ****** Initializing the Server  *******
+		// ****** The Rest  *******
 		void	bindServerSockAddr( void );
 		void	startListen( const int& max_queue );
 

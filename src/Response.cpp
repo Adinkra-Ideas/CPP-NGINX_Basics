@@ -3,7 +3,7 @@
 namespace http {
 
 	// Constructors
-	Response::Response()
+	Response::Response( void )
 	{
 	}
 
@@ -13,7 +13,7 @@ namespace http {
 	}
 
 	// Destructor
-	Response::~Response()
+	Response::~Response( void )
 	{
 	}
 
@@ -24,6 +24,9 @@ namespace http {
 		return *this;
 	}
 
+	// ****************	CONSTRUCTORS && OPERATORS ENDS	**********************
+	//////////////////////////////////////////////////////////////////////////
+	// ******************* READING AND WRITING BEGINS	**********************
 	void Response::setRequest(Request &request)
 	{
 		_request = request;
@@ -34,14 +37,21 @@ namespace http {
 		_server = &server;
 	}
 
+	// returns a reference to the _response_content member
 	std::string& Response::refResponseCont( void ) { return _response_content; }
 
+	// ****************	READING AND WRITING	ENDS		**********************
+	//////////////////////////////////////////////////////////////////////////
+	// ******************* 		THE REST BEGINS			**********************
+
+	// **********************************************************
+	// This is the engine that calls the rest member functions	*
+	// to build the response. 									*
+	// **********************************************************
 	void Response::buildResponse( void )
 	{
 		std::ostringstream	tmp;
 		ErrorCode			status = NONE;
-
-		// parseUrl( _request.readPath() );	// for removing the %%%% and other unformated chars from URL
 
 		if ( _request.readProtocol().compare("HTTP/1.1") )
 			status = HTTPVERSIONNOTSUPPORTED;
@@ -58,9 +68,9 @@ namespace http {
 					status = doGetPost("GET");
 			else if ( _request.readMethod() == POST )
 				status = doGetPost("POST");
-			else if ( _request.readMethod() == HEAD )
+			else if ( _request.readMethod() == HEAD )	// Same as GET except it doesn't return a Body;
 				status = doGetPost("HEAD");
-			else if ( _request.readMethod() == PUT )
+			else if ( _request.readMethod() == PUT )	// Same as POST except it doesn't return a Body;
 				status = doGetPost("PUT");
 			else if ( _request.readMethod() == DELETE )
 				status = doDelete();
@@ -80,13 +90,15 @@ namespace http {
 			<< ft::translateErrorCode(status) << "\n"
 			<< "Content-Type: " << getContentType(_loc_file_path, status) << " \n"
 			<< "Content-Length: " << _web_page.size() << " \n"
-			<< "Location: " << (( _request.readMethod() != HEAD && _request.readMethod() != PUT ) ? _location : "")
+			<< "Location: " << _location
 			<< "\n\n"
 			<< (( _request.readMethod() != HEAD && _request.readMethod() != PUT ) ? _web_page.c_str() : "");
 
+		// clear() _response_content before assigning it the new response
 		_response_content.clear();
 		_response_content = tmp.str();
 
+		// clear() all other data 
 		_request.clear();
 		_loc_file_path.clear();
 		_web_page.clear();
@@ -94,7 +106,11 @@ namespace http {
 		_root_directory.clear();
 	}
 
-	ErrorCode	Response::doDelete() {
+	// ******************************************************
+	// This function is called from buildResponse() when	*
+	// the client request uses a DELETE method				*
+	// ******************************************************
+	ErrorCode	Response::doDelete( void ) {
 		std::string			delete_me;			// stores the website URL path requested by client z.B "/directory/index.html"
 		std::string			delete_me_dir;		// directory copied from delete_me z.B. "/directory"
 		std::string			delete_me_fname;	// filename copied from delete_me z.B. "/index.html"
@@ -140,12 +156,12 @@ namespace http {
 		if ( (status = extractDirFromWebUrl(web_url_dir, web_url_fname, web_url)) != NONE )
 			return status;
 
-		// set it to location context of config that will route this request
+		// set iterator it to location context of config that will route this request
 		std::vector<http::Location>::iterator	it = _server->refLocations().begin();
 		if ( (status = setIteratorToLocationContext(it, web_url_dir, web_url_fname, method)) != NONE ) // we need to send you file_name
 			return status;
 
-		// backingup data received from GET/POST requests, if any
+		// Saving data/body received from requests, if any
 		std::ofstream 		_fout;
 		std::ostringstream	buff_tmp;
 		buff_tmp << (it->readUploads().size() > 0 ? it->readUploads() : "queryData") << "/"
@@ -163,8 +179,8 @@ namespace http {
 
 		// check if any redirection is present
 		// if ( _request.readMethod() != HEAD )
-			if ( (status = checkForRedirections(_loc_file_path, web_url, it)) != NONE )
-				return status;
+		if ( (status = checkForRedirections(_loc_file_path, web_url, it)) != NONE )
+			return status;
 
 		// Open an input file stream, write to stream from _loc_file_path,
 		// if write failed, return error404, else read from stream to 
@@ -201,25 +217,26 @@ namespace http {
 		if ( pos )
 			request_path.erase(0, pos);
 		
-		if ( request_path.size() <= 0 )
-			return NOTFOUND;
-
-		// put '/' at the beginning if absent
-		if ( request_path.size() > 0 && request_path.at(0) != '/' )
-			request_path.insert(0, 1, '/');
+		if ( request_path.size() <= 0 || (request_path.size() > 0 && request_path.at(0) != '/') )
+			return BADREQUEST;
 
 		pos = request_path.size();
 		if ( pos > 2 && request_path.at(pos - 1) == '/' )	// >2 meaning at least std::strlen("/x/")
 			request_path.erase(pos - 1, 1);	// we want to search Location context using z.B '/web_url_path' not '/web_url_path/'
 		
-		// copy only directory path from request_path to request_dir
+		// copy only directory part from request_path to request_dir
+		// then copy only filename part from request_path to request_fname
 		request_dir = request_path;
 		if ( (pos = request_dir.find('.')) != std::string::npos ) {
 			if ( (pos = request_dir.rfind('/', pos)) != std::string::npos )
 				request_dir = request_dir.substr(0, pos);
-			if ( pos == std::string::npos || request_path.at(request_dir.size() + 1) == '.' ) // we dont want "www.google.com/."
+			if ( pos == std::string::npos || request_path.at(request_dir.size() + 1) == '.' )	// we dont want "www.google.com/."
 				return BADREQUEST;
+
 			request_fname = request_path.substr(pos);
+			if ( (pos = request_fname.find_last_of('.')) != std::string::npos )
+				if ( ! types::parseMime( request_fname.substr(pos) ).compare("default") )		// has bad extension
+					return BADREQUEST;
 		}
 		return NONE;
 	}
@@ -231,7 +248,9 @@ namespace http {
 	// it(param1) is == _server->refLocations().begin(),			*
 	// path(param2) is a string containing the Location context 	*
 	// path that we're searching for,								*
-	// method(param3) is the method that the Location matching		*
+	// fname(param3) is a string containing only the file_name that	*
+	// the client requested for (minus the directory path)			*
+	// method(param4) is the method that the Location matching		*
 	// our path must support.										*
 	// **************************************************************
 	ErrorCode	Response::setIteratorToLocationContext( std::vector<http::Location>::iterator& it,
@@ -265,7 +284,7 @@ namespace http {
 	// **************************************************************************
 	// collate query parameters of POST requests and store uploaded files.		*
 	// post_query param is a string that holds the content of POST body.		*
-	// _fout param is an outstream already connected to the file where we		*
+	// _fout param is an outstream already connected to the file where we're	*
 	// storing the post queries.												*
 	// uploads_dir param is a string that holds the uploads directory assigned	*
 	// for the route serving this request in config file.						*
@@ -305,7 +324,7 @@ namespace http {
 					}
 				}
 				//else check if the key has a value
-				else if ( !post_query.compare(pos, 4,"\r\n\r\n") ) {	//( (pos = post_query.find("\r\n\r\n", pos)) != std::string::npos ) {
+				else if ( ! post_query.compare(pos, 4,"\r\n\r\n") ) {
 					pos += std::strlen("\r\n\r\n");
 					_fout << post_query.substr(pos, post_query.find("------WebKitForm", pos) - pos);
 				}
@@ -318,6 +337,10 @@ namespace http {
 	// used for building the "Content-Type: " part of httpresponse	*
 	// Body. Return Value is the appropriate browser compatible 	*
 	// content-type.												*
+	// loc_file_path(param1) is the filepath to the file we're 		*
+	// sending to client.
+	// status(param2) is the holds the responsecode value that 		*
+	// we're sending to client.
 	// **************************************************************
 	std::string	Response::getContentType( const std::string& loc_file_path, const ErrorCode& status ) {
 		std::string		tmp;
@@ -334,14 +357,17 @@ namespace http {
 			tmp = loc_file_path.substr(pos);
 
 		// retrieving the necessary browser-compatible content-type description
-		tmp = mime::getMimeType(tmp);
+		tmp = types::parseMime(tmp);
 		return tmp;
 	}
 
 	// **********************************************************************
-	// use supported error code to build their corresponding webpages		*
-	// just name the error code file the "error_number.html" and it will	*
-	// automatically be picked by this function								*
+	// Use supported error code provided by status(param2) to build their 	*
+	// corresponding webpages.												*
+	// Just name the error code file the "ERROR_NUMBER.html" and put it in	*
+	// the _server->readErrorPage() directory. 								*
+	// If _server->readErrorPage().size() == 0, (error_page wasn't set in 	*
+	// config file), then we use "public_html/error_pages/" automatically	*
 	// **********************************************************************
 	void	Response::buildErrorCodePage(std::string& web_page, ErrorCode& status) {
 		std::ostringstream	buff_tmp;

@@ -10,14 +10,15 @@ namespace http {
 
 	class Location {
 	public:
+		// ****** Constructors and Destructor **********
 		Location( void );
 		~Location( void );
 		Location( const Location& other );
 
+		// ************* Operators *********************
 		Location& operator= ( const Location& other );
 
-		std::vector<std::string>& refMethods( void );
-
+		// ************* Reading & Writing Operations **********
 		void				writePath(const std::string& path);
 		const std::string&	readPath( void );
 		void				writeRoot(const std::string& root);
@@ -32,6 +33,9 @@ namespace http {
 		const std::string&	readRewrite( void );
 		void				writeUploads(const std::string& uploads);
 		const std::string&	readUploads( void );
+
+		// ***** Returning Reference Address of Member Objects *********
+		std::vector<std::string>& refMethods( void );
 
 	private:
 		std::string					_path;		// (MANDATORY)	could be something like "/" or maybe "/cgi-bin"

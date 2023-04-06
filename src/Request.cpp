@@ -79,6 +79,8 @@ const std::string&	Request::readProtocol( void ) { return protocol; }
 // Returns the httpRequest path to doc requested by client
 const std::string&	Request::readPath( void ) { return path; }
 
+// Returns the string after the first occurence of '?' (ifExist) 
+// from path to doc requested by client
 const std::string&	Request::readQuery( void ) { return this->query; }
 
 // Returns the content of the _method (AKA GET, POST, or DELETE)
@@ -112,7 +114,7 @@ int Request::parse(std::string &buffer)
 	size_t error_lvl;
 	this->buffer += buffer;
 	buffer.clear();
-	// parse_status is set to FIRST_LINE as set by request def construc from client.hpp
+	// parse_status is set to FIRST_LINE as set by Request default constructor from client.hpp
 	// then if first line of client request was parsed successfully, parse_status is set to HEADERS
 	if (parse_status == FIRST_LINE)
 		error_lvl = first_line();
@@ -187,7 +189,7 @@ void Request::parseMethod(std::string str)
 
 void Request::parsePath(std::string str)
 {
-	if (str.at(0) != '/')
+	if (str.at(0) != '/' || str.size() <= 0 )
 		this->error_code = BADREQUEST;
 	else
 	{
