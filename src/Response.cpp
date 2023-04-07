@@ -187,7 +187,6 @@ namespace http {
 		if ( (status = checkForRedirections(_loc_file_path, web_url, it)) != NONE )
 			return status;
 
-
 		// Open an input file stream, write to stream from _loc_file_path,
 		// if write failed, return error404, else read from stream to 
 		// _web_page and return status 200
@@ -226,20 +225,16 @@ namespace http {
 		if ( request_path.size() <= 0 || (request_path.size() > 0 && request_path.at(0) != '/') )
 			return BADREQUEST;
 
-		pos = request_path.size();
-		if ( pos > 2 && request_path.at(pos - 1) == '/' )	// >2 meaning at least std::strlen("/x/")
-			request_path.erase(pos - 1, 1);	// we want to search Location context using z.B '/web_url_path' not '/web_url_path/'
-		
 		// copy only directory part from request_path to request_dir
 		// then copy only filename part from request_path to request_fname
 		request_dir = request_path;
-		if ( (pos = request_dir.find('.')) != std::string::npos ) {
+		if ( (pos = request_dir.rfind('.')) != std::string::npos ) {
 			if ( (pos = request_dir.rfind('/', pos)) != std::string::npos )
-				request_dir = request_dir.substr(0, pos);
+				request_dir = request_dir.substr(0, pos + 1);
 			if ( pos == std::string::npos || request_path.at(request_dir.size() + 1) == '.' )	// we dont want "www.google.com/."
 				return BADREQUEST;
 
-			request_fname = request_path.substr(pos);
+			request_fname = request_path.substr(pos + 1);
 			if ( (pos = request_fname.find_last_of('.')) != std::string::npos )
 				if ( ! types::parseMime( request_fname.substr(pos) ).compare("default") )		// has bad extension
 					return BADREQUEST;
@@ -260,64 +255,72 @@ namespace http {
 	// our path must support.										*
 	// **************************************************************
 	ErrorCode	Response::setIteratorToLocationContext( std::vector<http::Location>::iterator& it,
-										std::string& path, std::string& fname, const char *method ) {
-		std::string		*ptr = &path;
-		std::string tmp_loc;
-		size_t max_hit_length = 0;
-		std::vector<http::Location>::iterator tmp_iter;
-		if ((*ptr).empty())
-			(*ptr) = "/";
-		while ( it != _server->refLocations().end() ) 
-		{
-			if ((std::find(it->refMethods().begin(), it->refMethods().end(), method) != it->refMethods().end()) &&
-				(*ptr).find(it->readPath()) == 0)
-				{
-					if (max_hit_length < it->readPath().size())
-					{
-						max_hit_length = it->readPath().size();
-						tmp_iter = it;
-						tmp_loc = it->readPath();
-						_root_directory = it->readRoot();
-					}
-				}
-			it++;
-		}
-		if (max_hit_length == 0)
-			return METHODNOTALLOWED;
-		else
-		{
-			_loc_file_path = _root_directory + path.substr(tmp_loc.size()) + fname;
-			it = tmp_iter;
-			return NONE;
-		}
-		// std::string		dir_sign = "/";
-		// bool			flag = false;
+									const std::string& path, std::string& fname, const char *method ) {
+		std::string		search_key = path;
+		std::string		reserved;			// used for storing the temp chopped-off directory while loop is running
+		bool			flag = false;
+		std::size_t		pos;
 
-		// while ( it != _server->refLocations().end() ) {
-		// 	if ( ! it->readPath().compare(*ptr) && (std::find(it->refMethods().begin(),
-		// 				it->refMethods().end(), method) != it->refMethods().end()) ) {
-		// 		_loc_file_path = it->readRoot();
-		// 		_root_directory = it->readRoot();
-		// 		std::cout << "found: " << it->readRoot() << "on " << *ptr << std::endl;
-		// 		if ( flag )		// meaning we wanted a Location "/path" but ended up settling for Location "/". Therefore, '/path' needs to be appended to the path that '/' is rooted to
-		// 			_loc_file_path.append(path);
-		// 		_loc_file_path.append(fname);
-		// 		break ;
-		// 	}
-		// 	++it;
-		// 	if ( it == _server->refLocations().end() && !flag ) {
-		// 		flag = true;
-		// 		it = _server->refLocations().begin();
-		// 		ptr = &dir_sign;
-		// 	}
+		pos = search_key.size();
+		if ( pos && search_key.at(pos - 1) != '/' )
+			search_key.push_back('/');
+
+		while ( it != _server->refLocations().end() ) {
+			if ( ! it->readPath().compare(search_key) && (std::find(it->refMethods().begin(),
+						it->refMethods().end(), method) != it->refMethods().end()) ) {
+				_loc_file_path = it->readRoot();
+				_root_directory = it->readRoot();
+				_loc_file_path.append(reserved);
+				_loc_file_path.append(fname);
+				flag = true;
+				break ;
+			}
+			++it;
+			if ( it == _server->refLocations().end() && search_key.size() > 1 ) { // ">1" explanation: if search_key.size() == 1 at this point, it means search_key has used its final chance which is '/' but still failed to find a supported location context
+				if ( (pos = search_key.rfind('/', search_key.size() - 2)) != std::string::npos ) {
+					reserved.insert( 0, search_key.substr(pos + 1) );
+					search_key.erase(pos + 1);
+					it = _server->refLocations().begin();
+				}
+			}
+		}
+		if ( flag == false  )
+			return METHODNOTALLOWED;
+		return NONE;
+	
+		// const std::string		*ptr = &path;
+		// std::string tmp_loc;
+		// size_t max_hit_length = 0;
+		// std::vector<http::Location>::iterator tmp_iter;
+		// // if ((*ptr).empty())
+		// // 	(*ptr) = "/";
+		// while ( it != _server->refLocations().end() ) 
+		// {
+		// 	if ((std::find(it->refMethods().begin(), it->refMethods().end(), method) != it->refMethods().end()) &&
+		// 		(*ptr).find(it->readPath()) == 0)
+		// 		{
+		// 			if (max_hit_length < it->readPath().size())
+		// 			{
+		// 				max_hit_length = it->readPath().size();
+		// 				tmp_iter = it;
+		// 				tmp_loc = it->readPath();
+		// 				_root_directory = it->readRoot();
+		// 			}
+		// 		}
+		// 	it++;
 		// }
-		// if ( it == _server->refLocations().end() )
+		// if (max_hit_length == 0)
 		// 	return METHODNOTALLOWED;
-		// return NONE;
+		// else
+		// {
+		// 	_loc_file_path = _root_directory + path.substr(tmp_loc.size()) + fname;
+		// 	it = tmp_iter;
+		// 	return NONE;
+		// }
 	}
 
 	// **************************************************************************
-	// collate query parameters of POST requests and store uploaded files.		*
+	// Collate query parameters of POST requests and store uploaded files.		*
 	// post_query param is a string that holds the content of POST body.		*
 	// _fout param is an outstream already connected to the file where we're	*
 	// storing the post queries.												*

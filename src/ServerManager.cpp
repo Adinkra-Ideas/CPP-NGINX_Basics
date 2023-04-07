@@ -254,7 +254,7 @@ namespace http {
 		else
 		{
 			std::string request(buffer, bytes_read);
-			//std::cout << "Client header : \n" << request << "$" << std::endl;
+			std::cout << "Client header : \n" << request << "$" << std::endl;
 			client.updateTime();
 			client.request.parse(request);
 			memset(buffer, 0 , sizeof(buffer));
