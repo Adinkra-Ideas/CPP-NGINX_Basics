@@ -112,8 +112,8 @@ namespace http {
 	// ******************************************************
 	ErrorCode	Response::doDelete( void ) {
 		std::string			delete_me;			// stores the website URL path requested by client z.B "/directory/index.html"
-		std::string			delete_me_dir;		// directory copied from delete_me z.B. "/directory"
-		std::string			delete_me_fname;	// filename copied from delete_me z.B. "/index.html"
+		std::string			delete_me_dir;		// directory copied from delete_me z.B. "/directory/"
+		std::string			delete_me_fname;	// filename copied from delete_me z.B. "index.html"
 		ErrorCode			status = NONE;
 
 		delete_me = _request.readPath();
@@ -146,8 +146,8 @@ namespace http {
 	// ******************************************************************************
 	ErrorCode	Response::doGetPost( const char *method ) {
 		std::string		web_url;			// stores the website URL path requested by client z.B "/directory/index.html"
-		std::string		web_url_dir;		// directory copied from web_url z.B. "/directory"
-		std::string		web_url_fname;		// filename copied from web_url z.B. "/index.html"
+		std::string		web_url_dir;		// directory copied from web_url z.B. "/directory/"
+		std::string		web_url_fname;		// filename copied from web_url z.B. "index.html"
 		ErrorCode		status = NONE;	
 
 		// copy directory part of web_url to web_url_dir
@@ -163,7 +163,7 @@ namespace http {
 		// std::cout << "web_url_dir: " << web_url_dir << "$" <<std::endl;
 		// std::cout << "_loc_file_path: " << _loc_file_path << "$" <<std::endl;
 		// std::cout << "_root_directory: " << _root_directory << "$" <<std::endl;
-		if ( (status = setIteratorToLocationContext(it, web_url_dir, web_url_fname, method)) != NONE ) // we need to send you file_name
+		if ( (status = setIteratorToLocationContext(it, web_url_dir, web_url_fname, method)) != NONE )
 			return status;
 
 		// Saving data/body received from requests, if any
@@ -349,8 +349,8 @@ namespace http {
 					if ( (pos = post_query.find_first_not_of("\r\n", pos + tmp.size() + 1)) != std::string::npos )
 						_fout << post_query.substr(pos, post_query.find("\r\n", pos) - pos) << "\r\n";
 
-					tmp.insert(0, 1, '/');
-					tmp.insert(0, (uploads_dir.size() > 0 ? uploads_dir.c_str() : "queryData") );
+					// tmp.insert(0, 1, '/');
+					tmp.insert(0, (uploads_dir.size() > 0 ? uploads_dir.c_str() : "queryData/") );
 					std::ofstream 	_uploaded_file;
 					_uploaded_file.open(tmp.c_str(), std::ios::out | std::ios::trunc );
 					if ( _uploaded_file.good() ) {
@@ -412,7 +412,7 @@ namespace http {
 		std::ifstream		fin;
 		std::string			error_pages;
 
-		// if we have a LISTDIRECTORYCONTENT request, do 
+		// if we have a LISTDIRECTORYCONTENT request (AKA autoindex	on), do 
 		if ( status == LISTDIRECTORYCONTENTS ) {
 			ft::listDirectoryContent(web_page, _loc_file_path, _root_directory);
 			status = OK;
@@ -423,10 +423,10 @@ namespace http {
 		// if error_pages.size() <= 0, use our default error page directory
 		// else, use the error_page value from server config
 		error_pages = _server->readErrorPage();
-		if ( error_pages.size() <= 0 )
+		if ( error_pages.size() == 0 )
 			buff_tmp << "public_html/error_pages/" << status << ".html";
 		else
-			buff_tmp << error_pages.c_str() << "/" << status << ".html";
+			buff_tmp << error_pages.c_str() << status << ".html";
 
 		fin.open( buff_tmp.str().c_str() );
 		if ( fin.good() ) {
