@@ -122,8 +122,8 @@ namespace http {
 	// ******************************************************
 	ErrorCode	Response::doDelete( void ) {
 		std::string			delete_me;			// stores the website URL path requested by client z.B "/directory/index.html"
-		std::string			delete_me_dir;		// directory copied from delete_me z.B. "/directory"
-		std::string			delete_me_fname;	// filename copied from delete_me z.B. "/index.html"
+		std::string			delete_me_dir;		// directory copied from delete_me z.B. "/directory/"
+		std::string			delete_me_fname;	// filename copied from delete_me z.B. "index.html"
 		ErrorCode			status = NONE;
 
 		delete_me = _request.readPath();
@@ -156,8 +156,8 @@ namespace http {
 	// ******************************************************************************
 	ErrorCode	Response::doGetPost( const char *method ) {
 		std::string		web_url;			// stores the website URL path requested by client z.B "/directory/index.html"
-		std::string		web_url_dir;		// directory copied from web_url z.B. "/directory"
-		std::string		web_url_fname;		// filename copied from web_url z.B. "/index.html"
+		std::string		web_url_dir;		// directory copied from web_url z.B. "/directory/"
+		std::string		web_url_fname;		// filename copied from web_url z.B. "index.html"
 		ErrorCode		status = NONE;	
 
 		// copy directory part of web_url to web_url_dir
@@ -176,16 +176,20 @@ namespace http {
 		// std::cout << "web_url_dir: " << web_url_dir << "$" <<std::endl;
 		// std::cout << "_loc_file_path: " << _loc_file_path << "$" <<std::endl;
 		// std::cout << "_root_directory: " << _root_directory << "$" <<std::endl;
+		if ( (status = setIteratorToLocationContext(it, web_url_dir, web_url_fname, method)) != NONE )
+			return status;
+
 		// Saving data/body received from requests, if any
 		std::ofstream 		_fout;
 		std::ostringstream	buff_tmp;
 		buff_tmp << (it->readUploads().size() > 0 ? it->readUploads() : "queryData") << "/"
-			<< ( _request.getRequestBody().size() > 0 ? "postQery" : _request.readQuery().size() > 0 ? "getQery" : "");
+			<< ( _request.getRequestBody().size() > 0 ? "postQery" : _request.readQuery().size() > 0 ? "getQery" : "tmp");
 		_fout.open(buff_tmp.str().c_str(), std::ios::out | std::ios::app );
+		//std::cout << "tmp_file:" << buff_tmp.str() << std::endl;
 		if (! _fout.good() )
 			print_status(ft_RED, "Skipping GET/POST/PUT Query Backup Because Uploads Path Not Created");
 		else {
-			if ( _request.getRequestBody().size() > 0 )				// it's a post or put request
+			if ( strcmp(method, "POST") == 0 || strcmp(method, "PUT") == 0 /*_request.getRequestBody().size() > 0*/ )				// it's a post or put request
 				collatePostQuery(_request.getRequestBody(), _fout, it->readUploads());
 			else if ( _request.readQuery().size() > 0 )				// it's a get request that has query parameters			
 				_fout << _request.readQuery() << std::endl;
@@ -193,9 +197,11 @@ namespace http {
 		}
 
 		// check if any redirection is present
-		// if ( _request.readMethod() != HEAD )
-		if ( (status = checkForRedirections(_loc_file_path, web_url, it)) != NONE )
-			return status;
+		if ( strcmp(method, "GET") == 0 || strcmp(method, "HEAD") == 0 )
+		{
+			if ( (status = checkForRedirections(_loc_file_path, web_url, it)) != NONE )
+				return status;
+		}
 
 
 		// Open an input file stream, write to stream from _loc_file_path,
@@ -237,14 +243,10 @@ namespace http {
 		if ( request_path.size() <= 0 || (request_path.size() > 0 && request_path.at(0) != '/') )
 			return BADREQUEST;
 
-		pos = request_path.size();
-		// if ( pos > 2 && request_path.at(pos - 1) == '/' )	// >2 meaning at least std::strlen("/x/")
-		// 	request_path.erase(pos - 1, 1);	// we want to search Location context using z.B '/web_url_path' not '/web_url_path/'
-		
 		// copy only directory part from request_path to request_dir
 		// then copy only filename part from request_path to request_fname
 		request_dir = request_path;
-		if ( (pos = request_dir.find('.')) != std::string::npos ) {
+		if ( (pos = request_dir.rfind('.')) != std::string::npos ) {
 			if ( (pos = request_dir.rfind('/', pos)) != std::string::npos )
 				request_dir = request_dir.substr(0, pos + 1);
 			if ( pos == std::string::npos || request_path.at(request_dir.size() + 1) == '.' )	// we dont want "www.google.com/."
@@ -271,70 +273,72 @@ namespace http {
 	// our path must support.										*
 	// **************************************************************
 	ErrorCode	Response::setIteratorToLocationContext( std::vector<http::Location>::iterator& it,
-										std::string& path, std::string& fname, const char *method ) {
-		std::string		*ptr = &path;
-		std::string tmp_loc;
-		size_t max_hit_length = 0;
-		std::vector<http::Location>::iterator tmp_iter;
-		if ((*ptr).empty())
-			(*ptr) = "/";
-		// std::cout << "Path:" << path << std::endl;
-		while ( it != _server->refLocations().end() ) 
-		{ 
-			// std::cout << "location tested:" << it->readPath() << std::endl;
-			if ((std::find(it->refMethods().begin(), it->refMethods().end(), method) != it->refMethods().end()) &&
-				(*ptr).find(it->readPath()) == 0)
-				{
-					if (max_hit_length < it->readPath().size())
-					{
-						max_hit_length = it->readPath().size();
-						tmp_iter = it;
-						tmp_loc = it->readPath();
-						_root_directory = it->readRoot();
-					}
-				}
-			it++;
-		}
-		if (max_hit_length == 0)
-			return METHODNOTALLOWED;
-		else
-		{
-			//std::cout << "rest of path:" << path.substr(tmp_loc.size()) << std::endl;
-			//std::cout << "file name:" << fname << std::endl;
-			_loc_file_path = _root_directory + "/" + path.substr(tmp_loc.size()) + "/" + fname;
-			_loc_file_path = remove_extra_backslash(_loc_file_path);
-			//std::cout << "_loc_file_path" << _loc_file_path << std::endl;
-			it = tmp_iter;
-			return NONE;
-		}
-		// std::string		dir_sign = "/";
-		// bool			flag = false;
+									const std::string& path, std::string& fname, const char *method ) {
+		std::string		search_key = path;
+		std::string		reserved;			// used for storing the temp chopped-off directory while loop is running
+		bool			flag = false;
+		std::size_t		pos;
 
-		// while ( it != _server->refLocations().end() ) {
-		// 	if ( ! it->readPath().compare(*ptr) && (std::find(it->refMethods().begin(),
-		// 				it->refMethods().end(), method) != it->refMethods().end()) ) {
-		// 		_loc_file_path = it->readRoot();
-		// 		_root_directory = it->readRoot();
-		// 		std::cout << "found: " << it->readRoot() << "on " << *ptr << std::endl;
-		// 		if ( flag )		// meaning we wanted a Location "/path" but ended up settling for Location "/". Therefore, '/path' needs to be appended to the path that '/' is rooted to
-		// 			_loc_file_path.append(path);
-		// 		_loc_file_path.append(fname);
-		// 		break ;
-		// 	}
-		// 	++it;
-		// 	if ( it == _server->refLocations().end() && !flag ) {
-		// 		flag = true;
-		// 		it = _server->refLocations().begin();
-		// 		ptr = &dir_sign;
-		// 	}
+		pos = search_key.size();
+		if ( pos && search_key.at(pos - 1) != '/' )
+			search_key.push_back('/');
+
+		while ( it != _server->refLocations().end() ) {
+			if ( ! it->readPath().compare(search_key) && (std::find(it->refMethods().begin(),
+						it->refMethods().end(), method) != it->refMethods().end()) ) {
+				_loc_file_path = it->readRoot();
+				_root_directory = it->readRoot();
+				_loc_file_path.append(reserved);
+				_loc_file_path.append(fname);
+				flag = true;
+				break ;
+			}
+			++it;
+			if ( it == _server->refLocations().end() && search_key.size() > 1 ) { // ">1" explanation: if search_key.size() == 1 at this point, it means search_key has used its final chance which is '/' but still failed to find a supported location context
+				if ( (pos = search_key.rfind('/', search_key.size() - 2)) != std::string::npos ) {
+					reserved.insert( 0, search_key.substr(pos + 1) );
+					search_key.erase(pos + 1);
+					it = _server->refLocations().begin();
+				}
+			}
+		}
+		if ( flag == false  )
+			return METHODNOTALLOWED;
+		return NONE;
+	
+		// const std::string		*ptr = &path;
+		// std::string tmp_loc;
+		// size_t max_hit_length = 0;
+		// std::vector<http::Location>::iterator tmp_iter;
+		// // if ((*ptr).empty())
+		// // 	(*ptr) = "/";
+		// while ( it != _server->refLocations().end() ) 
+		// {
+		// 	if ((std::find(it->refMethods().begin(), it->refMethods().end(), method) != it->refMethods().end()) &&
+		// 		(*ptr).find(it->readPath()) == 0)
+		// 		{
+		// 			if (max_hit_length < it->readPath().size())
+		// 			{
+		// 				max_hit_length = it->readPath().size();
+		// 				tmp_iter = it;
+		// 				tmp_loc = it->readPath();
+		// 				_root_directory = it->readRoot();
+		// 			}
+		// 		}
+		// 	it++;
 		// }
-		// if ( it == _server->refLocations().end() )
+		// if (max_hit_length == 0)
 		// 	return METHODNOTALLOWED;
-		// return NONE;
+		// else
+		// {
+		// 	_loc_file_path = _root_directory + path.substr(tmp_loc.size()) + fname;
+		// 	it = tmp_iter;
+		// 	return NONE;
+		// }
 	}
 
 	// **************************************************************************
-	// collate query parameters of POST requests and store uploaded files.		*
+	// Collate query parameters of POST requests and store uploaded files.		*
 	// post_query param is a string that holds the content of POST body.		*
 	// _fout param is an outstream already connected to the file where we're	*
 	// storing the post queries.												*
@@ -365,8 +369,8 @@ namespace http {
 						if ( (pos = post_query.find_first_not_of("\r\n", pos + tmp.size() + 1)) != std::string::npos )
 							_fout << post_query.substr(pos, post_query.find("\r\n", pos) - pos) << "\r\n";
 
-						tmp.insert(0, 1, '/');
-						tmp.insert(0, (uploads_dir.size() > 0 ? uploads_dir.c_str() : "queryData") );
+						// tmp.insert(0, 1, '/');
+						tmp.insert(0, (uploads_dir.size() > 0 ? uploads_dir.c_str() : "queryData/") );
 						std::ofstream 	_uploaded_file;
 						_uploaded_file.open(tmp.c_str(), std::ios::out | std::ios::trunc );
 						if ( _uploaded_file.good() ) {
@@ -377,7 +381,7 @@ namespace http {
 							_uploaded_file.close();
 						}
 					}
-					//else check if the key has a value
+				//else check if the key has a value
 					else if ( ! post_query.compare(pos, 4,"\r\n\r\n") ) {
 						pos += std::strlen("\r\n\r\n");
 						_fout << post_query.substr(pos, post_query.find("------WebKitForm", pos) - pos);
@@ -444,7 +448,7 @@ namespace http {
 		std::ifstream		fin;
 		std::string			error_pages;
 
-		// if we have a LISTDIRECTORYCONTENT request, do 
+		// if we have a LISTDIRECTORYCONTENT request (AKA autoindex	on), do 
 		if ( status == LISTDIRECTORYCONTENTS ) {
 			ft::listDirectoryContent(web_page, _loc_file_path, _root_directory);
 			status = OK;
@@ -455,10 +459,10 @@ namespace http {
 		// if error_pages.size() <= 0, use our default error page directory
 		// else, use the error_page value from server config
 		error_pages = _server->readErrorPage();
-		if ( error_pages.size() <= 0 )
+		if ( error_pages.size() == 0 )
 			buff_tmp << "public_html/error_pages/" << status << ".html";
 		else
-			buff_tmp << error_pages.c_str() << "/" << status << ".html";
+			buff_tmp << error_pages.c_str() << status << ".html";
 
 		fin.open( buff_tmp.str().c_str() );
 		if ( fin.good() ) {
@@ -518,7 +522,6 @@ namespace http {
 					return NOTFOUND;
 				}
 			}
-			//TODO check location for last "/"
 			if (*(_location.end() - 1) == '/')
 				_location.append(it->readIndex());
 			else

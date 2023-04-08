@@ -379,13 +379,14 @@ void Request::parse_chunks()
 		}
 		if(this->chunk_part == CHUNKDATA)
 		{
+			//std::cout << "stuck2?" << std::endl;
 			if (this->chunk_length == 0)
 			{
 				trailing_chunk();
 				return ;
 				this->buffer.clear();
 			}
-			else if(this->buffer.length() >= this->chunk_length)
+			else if(this->buffer.length() >= this->chunk_length + 2)
 			{
 				this->body += this->buffer.substr(0, this->chunk_length);
 				if (this->body.length() > this->max_body_size)
@@ -396,6 +397,12 @@ void Request::parse_chunks()
 				}
 				this->buffer.erase(0, this->chunk_length + 2);
 				this->chunk_part = CHUNKSIZE;
+			}
+			else if ((this->buffer.length() + this->body.length()) > this->max_body_size)
+			{
+				this->error_code = CONTENTTOOLARGE;
+				this->parse_status = COMPLETED;
+				return ;
 			}
 		}
 	}

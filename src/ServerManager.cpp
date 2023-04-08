@@ -128,6 +128,7 @@ namespace http {
 				// else if (FD_ISSET(i, &_except_fds) // This is for managing exception if necessary
 			}
 			checkTimeout();
+			usleep(500);
 		}	
 	}
 	void ServerManager::checkTimeout()
@@ -253,7 +254,7 @@ namespace http {
 		else
 		{
 			std::string request(buffer, bytes_read);
-			//std::cout << "Client header : \n" << request << "$" << std::endl;
+			//std::cout << "Client header read:" << bytes_read << std::endl;
 			client.updateTime();
 			client.request.parse(request);
 			memset(buffer, 0 , sizeof(buffer));
@@ -282,7 +283,6 @@ namespace http {
 			client.response.set_bytesend(client.response.get_bytesend() + bytesSent);
 			// std::cout << "server send: " << client.response.get_bytesend() << std::endl;
 			// std::cout << "server response size: " << client.response.refResponseCont().size() << std::endl;
-			print_status(ft_GREEN, "Server Response sent to client");
 		}
 		else if (bytesSent == 0)
 		{
@@ -303,6 +303,7 @@ namespace http {
 			
 		if (static_cast<size_t>(client.response.get_bytesend()) == client.response.refResponseCont().size())
 		{
+			print_status(ft_GREEN, "Server Response sent to client");
 			//always keep the connection alive
 			removeFDToSet(fd, this->_write_fds);
 			addFDToSet(fd, this->_received_fds);

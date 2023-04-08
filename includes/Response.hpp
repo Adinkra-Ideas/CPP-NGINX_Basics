@@ -64,7 +64,7 @@ namespace http {
 		ErrorCode			extractDirFromWebUrl( std::string& request_dir,
 												std::string& request_fname, std::string& request_path );
 		ErrorCode			setIteratorToLocationContext( std::vector<http::Location>::iterator& it,
-											std::string& path, std::string& fname, const char *method );
+										const std::string& path, std::string& fname, const char *method );
 		void				collatePostQuery( const std::string& post_query,
 												std::ofstream& _fout, const std::string& uploads_dir  );
 	};

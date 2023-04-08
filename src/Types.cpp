@@ -4,11 +4,16 @@ namespace http {
 
 	namespace types {
 
-		std::string	parseMime(const std::string& extension)
+		std::string	parseMime(const std::string& file_path)
 		{
-			Types	obj;
+			Types			obj;
+			std::size_t		pos;
+			std::string		extension;
 
-			if (obj.readMimeTypes().count(extension))
+			if ( (pos = file_path.rfind('.', file_path.size() - 2)) != std::string::npos )
+				extension = file_path.substr(pos);
+
+			if ( extension.size() && obj.readMimeTypes().count(extension) )
 				return (obj.readMimeTypes().at(extension));
 			return (obj.readMimeTypes().at("default"));
 		}
