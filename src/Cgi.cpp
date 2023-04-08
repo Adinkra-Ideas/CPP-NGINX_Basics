@@ -6,13 +6,13 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:56:47 by hrings            #+#    #+#             */
-/*   Updated: 2023/04/06 12:35:31 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/08 12:43:25 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Cgi.hpp"
 
-Cgi::Cgi(const Request &copy) : _request(copy), error_code(NONE), body("")
+Cgi::Cgi(const Request &copy, std::string root) : _request(copy), error_code(NONE), body(""), server_root(root)
 {
 	char *cwd = getcwd(NULL, 0);
   	if (!cwd)
@@ -66,7 +66,7 @@ void Cgi::initEnv()
     	return ;
   	std::string cwd_ = cwd;
   	free(cwd);
-	this->file_path = cwd_ + "/cgi-bin/" + _request.getCgi_exe();
+	this->file_path = http::remove_extra_backslash(cwd_ + "/" + this->server_root + "/cgi-bin/" + _request.getCgi_exe());
 	if (this->_request.readMethod() == GET)
 		this->env_var["REQUEST_METHOD"] = "GET";
 	if (this->_request.readMethod() == POST)
@@ -88,6 +88,14 @@ void Cgi::initEnv()
 	//this->env_var["REMOTE_ADDR"] = this->_request.headers["host"];
 	this->env_var["REQUEST_URI"] = cwd_ + this->_request.readPath();
 	this->env_var["SERVER_SOFTWARE"] = "WEBSERV/1.0";
+	for (std::map<std::string, std::string>::iterator it = this->_request.headers.begin();
+		it != this->_request.headers.end();
+		++it)
+	{
+			std::string header = "HTTP_" + http::to_upper_case(it->first);
+			std::replace(header.begin(), header.end(), '-', '_');
+			this->env_var[header] = it->second;
+	}
 	this->env = (char **)calloc(sizeof(char *), this->env_var.size() + 1);
 	if (!this->env)
 	{
@@ -109,6 +117,8 @@ void Cgi::initEnv()
 
 void Cgi::executeScript()
 {
+	//std::cout << "exec_path:" << file_path << std::endl;
+	//std::cout << "server root:" << this->server_root << std::endl;
 	if (this->_request.readMethod() == GET && this->_request.getCgi_method() == "GET")
 		runGetScript();
 	else if (this->_request.readMethod() == POST && this->_request.getCgi_method() == "POST")
@@ -217,17 +227,20 @@ void Cgi::runPostScript()
 		close(pip[1]);
 		dup2(pip[0], STDIN_FILENO);
 		dup2(tmp_fd, STDOUT_FILENO);
-		
 		execve(this->file_path.c_str(), this->argv, env);
 		exit(1);
 	}
 	else
 	{
 		close(pip[0]);
-		if (write(pip[1], this->_request.getRequestBody().c_str(), this->_request.getRequestBody().length()) <= 0)
+		//std::cout << "request body:" << this->_request.getRequestBody() << std::endl;
+		if (this->_request.getRequestBody().length())
 		{
-		this->error_code = INTERNALSERVERERROR;
-		return ;
+			if (write(pip[1], this->_request.getRequestBody().c_str(), this->_request.getRequestBody().length()) <= 0)
+			{
+			this->error_code = INTERNALSERVERERROR;
+			return ;
+			}
 		}
 		close(pip[1]);
 		time_t start = time(NULL);
@@ -261,18 +274,18 @@ void Cgi::runPostScript()
 		while (1)
 		{	
 			int bytes_read;
-			char readbuffer[4096 + 1];
-			memset (readbuffer,0,4096);
+			char readbuffer[BUFFER_SIZE + 1];
+			memset (readbuffer,0,BUFFER_SIZE);
 			
-			bytes_read = read(tmp_fd, readbuffer, 4096);
+			bytes_read = read(tmp_fd, readbuffer, BUFFER_SIZE);
 			if (bytes_read <= 0)
 			{
 				close(tmp_fd);
 				std::remove(tmp_file.c_str());
 				break ;
 			}				
-			this->body += std::string(readbuffer);	
-			memset (readbuffer,0,4096);
+			this->body += std::string(readbuffer, bytes_read);
+			memset (readbuffer,0,BUFFER_SIZE);
 			
 		}
 		this->error_code = OK;

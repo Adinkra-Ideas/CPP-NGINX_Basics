@@ -39,6 +39,8 @@ namespace http {
 
 		// ******************* The Rest  *******************************
 		void			buildResponse( void );
+		void set_bytesend(int n);
+		int get_bytesend(void);
 
 	private:
 		Request				_request;			// object holding the parsed requestheader
@@ -49,7 +51,7 @@ namespace http {
 		std::string			_location;				// Web address where the client's data eventually got fetched from (after all the redirections)
 		std::string			_root_directory;		// directory used as root by the route(aka location context) servicing this request from _server config
 		// std::string			_key_value;			// if a GET request has key=>values appended, they will be backed up to this string
-
+		int byte_send;
 		// ******************* The Rest  *******************************
 		std::string			translateErrorCode( const ErrorCode& status_code );
 		std::string			getContentType( const std::string& loc_file_path, const ErrorCode& status );

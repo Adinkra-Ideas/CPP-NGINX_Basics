@@ -42,6 +42,15 @@ namespace http {
 			str[i] = std::tolower(str[i]);
 		return str;
 	}
+
+	std::string to_upper_case(std::string str)
+	{
+		size_t string_len = str.length();
+		for (size_t i = 0; i < string_len; ++i)
+			str[i] = std::toupper(str[i]);
+		return str;
+	}
+
 	size_t str_to_hex(std::string str)
 	{
 		std::stringstream ss;
@@ -50,6 +59,22 @@ namespace http {
 		ss >> result;
 
 		return result;
+	}
+	std::string remove_extra_backslash(std::string str)
+	{
+		std::string::iterator it = str.begin();
+		while (it != str.end())
+		{
+			if(*it == '/')
+			{
+				++it;
+				while (it != str.end() && *it == '/')
+					it = str.erase(it);
+			}
+			else
+				++it;
+		}
+		return str;
 	}
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
 
@@ -144,6 +169,8 @@ namespace http {
 					return "REQUEST TIMEOUT";
 				case 413:
 					return "CONTENT TOO LARGE";
+				case 414:
+					return "URI TOO LONG";
 				case 418:
 					return "LISTDIRECTORYCONTENTS";
 				case 500:
