@@ -138,10 +138,8 @@ void Request::parse(std::string &buffer)
 		parse_chunks();
 }
 
-//TODO also check total length of the request
 void Request::first_line()
 {
-	//TODO more checks if line is ok
 	if (this->buffer.find(EOL) != std::string::npos)   // EOL == '\r\n'
 	{
 		size_t start = 0;
@@ -272,8 +270,6 @@ void Request::parse_headers()
 
 void Request::prepare_for_body()
 {
-	//TODO check if header is ok
-	//TODO prepare chunk receiving
 	if (this->headers.find("host") == this->headers.end() || this->headers["host"].empty())
 	{
 		this->error_code = BADREQUEST;
@@ -481,7 +477,6 @@ bool Request::not_allowed_char_in_field(std::string value)
 
 bool Request::not_allowed_char_in_key(std::string value)
 {
-	//TODO check this for wrong char ....
 	for(std::string::iterator it = value.begin(); it != value.end(); ++it)
 	{
     if (!(*it == '-'  || *it == '_' ||(*it >= '0' && *it <= '9') || (*it >= 'A' && *it <= 'Z') ||

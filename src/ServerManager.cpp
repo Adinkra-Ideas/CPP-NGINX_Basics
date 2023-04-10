@@ -82,8 +82,7 @@ namespace http {
 		ft::initSignal();
 	}
 
-	//TODO timeout checker for clients
-	void    ServerManager::runServers( void ) {
+		void    ServerManager::runServers( void ) {
 		fd_set			_received_fds_tmp;
 		fd_set 			_write_fds_tmp;
 		int 			ret;
@@ -137,14 +136,12 @@ namespace http {
 		{
 			if (difftime(time(NULL), iter->second.getupdateTime()) > TIMEOUTTIME && iter->second.getRequest().has_request())
 			{
-				//TODO send error msg to client
 				iter->second.request.setStatusCode(REQUESTTIMEOUT);
 				iter->second.buildResponse();
 				removeFDToSet(iter->first, this->_received_fds);
 				addFDToSet(iter->first, this->_write_fds);
 				print_status(ft_GREEN, "Timeout Closing connection to Client because of timeout");
 				iter->second.updateTime();
-				// closeConnectionToClient(iter->first);
 			}
 		}
 	}
@@ -232,11 +229,10 @@ namespace http {
 		// Reading Clients httpRequest details from their 
 		// outbound socket addr FD into buffer
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		//std::cout << "Client request : \n" << buffer << std::endl;
+		// std::cout << "Client request : \n" << buffer << std::endl;
 		//std::cout << "bytes read : " << bytes_read << std::endl;
 		if (bytes_read == 0)
 		{
-			//TODO change msg
 			print_status(ft_GREEN, "Closing connection because no activity");
 			removeFDToSet(fd, this->_received_fds);
 			close(fd);

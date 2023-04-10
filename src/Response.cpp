@@ -163,6 +163,7 @@ namespace http {
 		// copy directory part of web_url to web_url_dir
 		// and filename part of web_url to web_url_fname
 		web_url = _request.readPath();
+
 		//std::cout <<"web_url:" << web_url << std::endl;
 		if ( (status = extractDirFromWebUrl(web_url_dir, web_url_fname, web_url)) != NONE )
 			return status;

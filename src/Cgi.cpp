@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:56:47 by hrings            #+#    #+#             */
-/*   Updated: 2023/04/08 12:43:25 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/10 20:26:30 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ void Cgi::initEnv()
 	this->env_var["PATH_INFO"] = cwd_ + this->_request.readPath();
 	this->env_var["PATH_TRANSLATED"] = cwd_ + this->_request.readPath();
 	this->env_var["REQUEST_URI"] = this->_request.readPath();
-	this->env_var["SCRIPT_NAME"] = this->file_path;
+	this->env_var["SCRIPT_NAME"] = _request.getCgi_exe();
 	this->env_var["QUERY_STRING"] = this->_request.readQuery();
 	//this->env_var["REMOTE_ADDR"] = this->_request.headers["host"];
 	this->env_var["REQUEST_URI"] = cwd_ + this->_request.readPath();
@@ -110,7 +110,7 @@ void Cgi::initEnv()
 	}
 	size_t index = this->_request.readPath().find_last_of("/");
   	argv[0] = strdup(this->file_path.c_str());
-  	argv[1] = strdup((cwd_ + this->_request.readPath()).c_str());
+  	argv[1] = strdup(_request.getCgi_exe().c_str()); // strdup((cwd_ + this->_request.readPath()).c_str());
 	argv[2] = NULL;
 	this->execute_dir = this->working_dir + this->_request.readPath().substr(0, index);
 }
@@ -191,7 +191,7 @@ void Cgi::runGetScript()
 			if (bytes_read <= 0)
 			{
 				close(tmp_fd);
-				//std::remove(tmp_file.c_str());
+				std::remove(tmp_file.c_str());
 				break ;
 			}				
 			this->body += std::string(readbuffer);	
@@ -274,10 +274,10 @@ void Cgi::runPostScript()
 		while (1)
 		{	
 			int bytes_read;
-			char readbuffer[BUFFER_SIZE + 1];
-			memset (readbuffer,0,BUFFER_SIZE);
+			char readbuffer[4096 + 1];
+			memset (readbuffer,0,4096);
 			
-			bytes_read = read(tmp_fd, readbuffer, BUFFER_SIZE);
+			bytes_read = read(tmp_fd, readbuffer, 4096);
 			if (bytes_read <= 0)
 			{
 				close(tmp_fd);
@@ -285,7 +285,7 @@ void Cgi::runPostScript()
 				break ;
 			}				
 			this->body += std::string(readbuffer, bytes_read);
-			memset (readbuffer,0,BUFFER_SIZE);
+			memset (readbuffer,0,4096);
 			
 		}
 		this->error_code = OK;
