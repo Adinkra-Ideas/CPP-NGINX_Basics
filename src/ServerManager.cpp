@@ -127,7 +127,7 @@ namespace http {
 				// else if (FD_ISSET(i, &_except_fds) // This is for managing exception if necessary
 			}
 			checkTimeout();
-			usleep(500);
+			// usleep(500);
 		}	
 	}
 	void ServerManager::checkTimeout()

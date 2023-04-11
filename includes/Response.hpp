@@ -43,7 +43,7 @@ namespace http {
 		int get_bytesend(void);
 
 	private:
-		Request				_request;			// object holding the parsed requestheader
+		Request				*_request;			// object holding the parsed requestheader
 		http::Server		*_server;			// pointer to server object managing this response
 		std::string			_loc_file_path;		// The final local/server filepath after concatening the root path from config file with the httpRequest path received from client
 		std::string			_web_page;				// where the returned webpage will be stored
