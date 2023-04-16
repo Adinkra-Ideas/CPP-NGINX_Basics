@@ -138,10 +138,8 @@ void Request::parse(std::string &buffer)
 		parse_chunks();
 }
 
-//TODO also check total length of the request
 void Request::first_line()
 {
-	//TODO more checks if line is ok
 	if (this->buffer.find(EOL) != std::string::npos)   // EOL == '\r\n'
 	{
 		size_t start = 0;
@@ -194,8 +192,10 @@ void Request::parseMethod(std::string str)
 
 void Request::parsePath(std::string str)
 {
-	if (str.at(0) != '/' || str.size() <= 0 )
+	if (str.empty() || str.at(0) != '/')
 		this->error_code = BADREQUEST;
+	else if (str.length() > MAXURISIZE)
+		this->error_code = URITOOLONG;
 	else
 	{
 		size_t index = str.find("?");
@@ -231,17 +231,36 @@ void Request::parse_headers()
 				break ;
 		}		
 		delimiter = this->buffer.find(':');
-		key = this->buffer.substr(0, delimiter);
-		value = http::trim_whitespace(this->buffer.substr(delimiter + 1, end - delimiter - 1));
-		if (not_allowed_char_in_field(value))
+		if (delimiter == std::string::npos)
 		{
-			std::cout << "field erro:" << value << std::endl;
+			this->parse_status = COMPLETED;
+			this->error_code = BADREQUEST;
+			return ;
+		}
+		key = http::to_lower_case(this->buffer.substr(0, delimiter));
+		if(key.empty() || not_allowed_char_in_key(key))
+		{
+			//std::cout << "key erro:" << value << std::endl;
+			this->parse_status = COMPLETED;
+			this->error_code = BADREQUEST;
+			return ;
+		}
+		value = http::trim_whitespace(this->buffer.substr(delimiter + 1, end - delimiter - 1));
+		if (value.size() > MAXVALUESIZE || not_allowed_char_in_field(value) )
+		{
+			//std::cout << "field erro:" << value << std::endl;
 			this->parse_status = COMPLETED;
 			this->error_code = BADREQUEST;
 			return ;
 
 		}
-		this->headers[http::to_lower_case(key)] = value;				// we need to print out what'S stored in headers map object
+		if (this->headers.count(key))
+		{
+			this->parse_status = COMPLETED;
+			this->error_code = BADREQUEST;
+			return ;
+		}
+		this->headers[key] = value;				// we need to print out what'S stored in headers map object
 		this->buffer.erase(0, end + 2);
 		end = this->buffer.find(EOL);
 	}
@@ -251,13 +270,22 @@ void Request::parse_headers()
 
 void Request::prepare_for_body()
 {
-	//TODO check if header is ok
-	//TODO prepare chunk receiving
 	if (this->headers.find("host") == this->headers.end() || this->headers["host"].empty())
 	{
 		this->error_code = BADREQUEST;
 		this->parse_status = COMPLETED;
 		return ;
+	}
+	else if (this->headers["host"].find('@') != std::string::npos)
+	{
+		this->error_code = BADREQUEST;
+		this->parse_status = COMPLETED;
+		return ;
+	}
+	else
+	{
+		size_t pos = this->headers["host"].find(':');
+		this->serverName = http::trim_whitespace(this->headers["host"].substr(0, pos));
 	}
 	std::map<std::string, std::string>::iterator iter = this->headers.find("connection");
 	if (iter != this->headers.end())
@@ -274,19 +302,16 @@ void Request::prepare_for_body()
 	}
 	else if (this->headers.find("content-length") != this->headers.end())
 	{
-		try
-		{
-			this->body_length = parse_str_to_int(this->headers["content-length"]);
-			if(this->body_length > this->max_body_size)
-			{
-				this->error_code = CONTENTTOOLARGE;
-				this->parse_status = COMPLETED;
-				return ;
-			}
-		}
-		catch(const std::exception& e)
+		this->body_length = parse_str_to_int(this->headers["content-length"]);
+		if (this->body_length == SIZE_MAX)
 		{
 			this->error_code = BADREQUEST;
+			this->parse_status = COMPLETED;
+			return ;
+		}
+		if(this->body_length > this->max_body_size)
+		{
+			this->error_code = CONTENTTOOLARGE;
 			this->parse_status = COMPLETED;
 			return ;
 		}
@@ -312,9 +337,9 @@ size_t Request::parse_str_to_int(std::string str)
 			result += str[i] - '0';
 		}
 		else
-			throw ;
+			return (SIZE_MAX);
 		if (result > MAXBODYSIZE)
-			throw ;
+			return (SIZE_MAX);
 	}
 	return (result);
 }
@@ -350,13 +375,14 @@ void Request::parse_chunks()
 		}
 		if(this->chunk_part == CHUNKDATA)
 		{
+			//std::cout << "stuck2?" << std::endl;
 			if (this->chunk_length == 0)
 			{
 				trailing_chunk();
 				return ;
 				this->buffer.clear();
 			}
-			else if(this->buffer.length() >= this->chunk_length)
+			else if(this->buffer.length() >= this->chunk_length + 2)
 			{
 				this->body += this->buffer.substr(0, this->chunk_length);
 				if (this->body.length() > this->max_body_size)
@@ -367,6 +393,12 @@ void Request::parse_chunks()
 				}
 				this->buffer.erase(0, this->chunk_length + 2);
 				this->chunk_part = CHUNKSIZE;
+			}
+			else if ((this->buffer.length() + this->body.length()) > this->max_body_size)
+			{
+				this->error_code = CONTENTTOOLARGE;
+				this->parse_status = COMPLETED;
+				return ;
 			}
 		}
 	}
@@ -443,6 +475,19 @@ bool Request::not_allowed_char_in_field(std::string value)
 	return false;	
 }
 
+bool Request::not_allowed_char_in_key(std::string value)
+{
+	for(std::string::iterator it = value.begin(); it != value.end(); ++it)
+	{
+    if (!(*it == '-'  || *it == '_' ||(*it >= '0' && *it <= '9') || (*it >= 'A' && *it <= 'Z') ||
+       (*it >= 'a' && *it <= 'z')))
+	   {
+			return true;
+	   }	
+	}
+	return false;	
+}
+
 void Request::set_max_body_size(size_t n)
 {
 	this->max_body_size = n;
@@ -453,6 +498,7 @@ bool Request::has_request()
 	return this->request_started;
 }
 
+//TODO check if chunk trailers are fine
 void Request::trailing_chunk()
 {
 	size_t end = this->buffer.find(EOL);

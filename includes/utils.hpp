@@ -34,6 +34,7 @@ enum ErrorCode
 	METHODNOTALLOWED = 405,
 	REQUESTTIMEOUT= 408,
 	CONTENTTOOLARGE = 413,
+	URITOOLONG = 414,
 	LISTDIRECTORYCONTENTS = 418,
 	INTERNALSERVERERROR = 500,
 	NOTIMPLEMENTED = 501,
@@ -48,7 +49,9 @@ namespace http {
 	std::string getCurrentTime();
 	std::string trim_whitespace(std::string str);
 	std::string to_lower_case(std::string str);
+	std::string to_upper_case(std::string str);
 	size_t str_to_hex(std::string str);
+	std::string remove_extra_backslash(std::string str);
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
 	///////////////////////////////////////////////////////////////////////////
 	// **************** MISCELLANEOUS FUNCTIONS BEGINS 		*******************

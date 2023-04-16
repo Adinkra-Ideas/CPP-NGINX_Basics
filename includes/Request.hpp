@@ -72,7 +72,7 @@ class Request
 		bool has_request();
 		
 
-	private:
+	//private:
 		void first_line();
 		void parse_headers();
 		void prepare_for_body();
@@ -84,6 +84,7 @@ class Request
 		size_t parse_str_to_int(std::string str);
 		bool not_allowed_char_in_URL();
 		bool not_allowed_char_in_field(std::string value);
+		bool not_allowed_char_in_key(std::string value);
 		void trailing_chunk();
 		Status parse_status;
 		std::string buffer;

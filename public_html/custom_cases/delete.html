@@ -1,29 +1,35 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Uploads to NGIN_Y</title>
-    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
-	<link href="https://drive.google.com/uc?export=view&amp;id=1Xugr6sMP2KHXBkaLNlZFxRnBLNDQkB5R" rel="stylesheet">
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <style>
-      html, body {
+
+<head>
+  <title>Uploads to NGIN_Y</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
+  <link href="https://drive.google.com/uc?export=view&amp;id=1Xugr6sMP2KHXBkaLNlZFxRnBLNDQkB5R" rel="stylesheet">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <style>
+    html,
+    body {
       display: flex;
       justify-content: center;
       font-family: Roboto, Arial, sans-serif;
       font-size: 15px;
-      }
-      form {
+    }
+
+    form {
       border: 5px solid #f1f1f1;
-      }
-      input[type=text], input[type=password] {
+    }
+
+    input[type=text],
+    input[type=password] {
       width: 100%;
       padding: 16px 8px;
       margin: 8px 0;
       display: inline-block;
       border: 1px solid #ccc;
       box-sizing: border-box;
-      }
-      button {
+    }
+
+    button {
       background-color: #8ebf42;
       color: white;
       padding: 14px 0;
@@ -31,56 +37,82 @@
       border: none;
       cursor: grabbing;
       width: 100%;
-      }
-      h3 {
-      text-align:center;
-      font-size:14;
-      }
-      button:hover {
+    }
+
+    h3 {
+      text-align: center;
+      font-size: 14;
+    }
+
+    button:hover {
       opacity: 0.8;
-      }
-      .formcontainer {
+    }
+
+    .formcontainer {
       text-align: left;
       margin: 24px 50px 12px;
-      }
-      .container {
+    }
+
+    .container {
       padding: 16px 0;
-      text-align:left;
-      }
-      span.psw {
+      text-align: left;
+    }
+
+    span.psw {
       float: right;
       padding-top: 0;
       padding-right: 15px;
+    }
+
+    /* Change styles for span on extra small screens */
+    @media screen and (max-width: 300px) {
+      span.psw {
+        display: block;
+        float: none;
       }
-      /* Change styles for span on extra small screens */
-      @media screen and (max-width: 300px) {
-		span.psw {
-			display: block;
-			float: none;
-			}
-	  }
-    </style>
-  </head>
-  <body>
-	<header class="header" style="background-color: DodgerBlue;"><div class="container"><div class="header__inner"><a class="nav__link" href="/">NGIN_Y</a><nav class="nav"><a class="nav__link" href="/">Home</a><a class="nav__link" href="/zero/one/uploads/uploads.html">Uploads</a><a class="nav__link" href="/zero/one/two/custom_cases/contact.html">Contact</a><a class="nav__link" href="/custom_cases/delete.html">Delete</a><a class="nav__link" href="/put.html">Put</a><a class="nav__link" href="#">Account</a></nav></div></div></header>
-      <div class="formcontainer">
-		<h3>Delete Something</h3>
-		<hr/><br />
+    }
+  </style>
+</head>
+
+<body>
+	<header class="header" style="background-color: DodgerBlue;">
 		<div class="container">
-			<label for="rloc"><strong>Resource Locator</strong></label>
-			<input type="text" id="toDelete" placeholder="Resource Pathname to Delete" name="rloc" /><br /><br />
+			<div class="header__inner">
+				<a class="nav__link" href="/">NGIN_Y</a>
+				<nav class="nav">
+					<a class="nav__link" href="/">Home</a>
+					<a class="nav__link" href="/zero/one/uploads/uploads.html">Uploads</a>
+					<a class="nav__link" href="/zero/one/two/custom_cases/contact.html">Contact</a>
+					<a class="nav__link" href="/custom_cases/delete.html">Delete</a>
+					<a class="nav__link" href="/custom_cases/cgi.html">Cgi Examples</a>
+					<!-- <a class="nav__link" href="#">Account</a> -->
+				</nav>
+			</div>
 		</div>
-      	<button id="toDeleteBtn">Delete</button>
-	<footer><div class="footer-content"><h3>Copyright 2023 NGIN_Y</h3></div></footer>
-	<!-- <script src="index.js"></script> -->
-	<script>
-		$('#toDeleteBtn').on('click',function(){
-			var delete_me = $('#toDelete').val();
-			// console.log(delete_me);
-			fetch(delete_me,  {
-    			method: 'DELETE'
-  			});
-		});
-	</script>
-  </body>
+	</header>
+  <div class="formcontainer">
+    <h3>Delete Something</h3>
+    <hr /><br />
+    <div class="container">
+      <label for="rloc"><strong>Resource Locator</strong></label>
+      <input type="text" id="toDelete" placeholder="Resource Pathname to Delete" name="rloc" /><br /><br />
+    </div>
+    <button id="toDeleteBtn">Delete</button>
+    <footer>
+      <div class="footer-content">
+        <h3>Copyright 2023 NGIN_Y</h3>
+      </div>
+    </footer>
+    <!-- <script src="index.js"></script> -->
+    <script>
+      $('#toDeleteBtn').on('click', function () {
+        var delete_me = $('#toDelete').val();
+        // console.log(delete_me);
+        fetch(delete_me, {
+          method: 'DELETE'
+        });
+      });
+    </script>
+</body>
+
 </html>

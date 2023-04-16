@@ -33,6 +33,8 @@ namespace http {
 		const std::string&	readRewrite( void );
 		void				writeUploads(const std::string& uploads);
 		const std::string&	readUploads( void );
+		void				writeMaxBody(const std::size_t& max_body);
+		const std::size_t&	readMaxBody( void );
 
 		// ***** Returning Reference Address of Member Objects *********
 		std::vector<std::string>& refMethods( void );
@@ -46,6 +48,7 @@ namespace http {
 		std::string					_exec;		// (OPTIONAL)	Execute CGI based on certain file extension (for example .php)
 		std::string					_rewrite;	// (OPTIONAL)	Define a HTTP redirection
 		std::string					_uploads;	// (OPTIONAL)	Define the directory where uploaded files will be stored
+		std::size_t					_max_body;	// (OPTIONAL)	Limit client body size
 	};
 
 }	// namespace ft
