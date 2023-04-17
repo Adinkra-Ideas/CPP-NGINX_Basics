@@ -294,7 +294,7 @@ void Request::prepare_for_body()
 	else if (this->headers.find("content-length") != this->headers.end())
 	{
 		this->body_length = parse_str_to_int(this->headers["content-length"]);
-		if (this->body_length == SIZE_MAX)
+		if (this->body_length == SIZE_MAX_T)
 		{
 			this->error_code = BADREQUEST;
 			this->parse_status = COMPLETED;
@@ -328,9 +328,9 @@ size_t Request::parse_str_to_int(std::string str)
 			result += str[i] - '0';
 		}
 		else
-			return (SIZE_MAX);
+			return (SIZE_MAX_T);
 		if (result > MAXBODYSIZE)
-			return (SIZE_MAX);
+			return (SIZE_MAX_T);
 	}
 	return (result);
 }
