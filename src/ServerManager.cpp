@@ -29,8 +29,6 @@ namespace http {
 	// **********************************************
 	void	ServerManager::parseConfig( const char *path ) {
 		parser_function_object	parser(_servers, path);
-		// std::cout << " port " << _servers[0].readPort() << std::endl;
-		// std::cout << " port " << _servers[1].readPort() << std::endl;
 	}
 
 	// **********************************************************
@@ -229,8 +227,6 @@ namespace http {
 		// Reading Clients httpRequest details from their 
 		// outbound socket addr FD into buffer
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		// std::cout << "Client request : \n" << buffer << std::endl;
-		//std::cout << "bytes read : " << bytes_read << std::endl;
 		if (bytes_read == 0)
 		{
 			print_status(ft_GREEN, "Closing connection because no activity");
@@ -250,17 +246,14 @@ namespace http {
 		else
 		{
 			std::string request(buffer, bytes_read);
-			//std::cout << "Client header read:" << bytes_read << std::endl;
 			client.updateTime();
 			client.request.parse(request);
 			memset(buffer, 0 , sizeof(buffer));
 		}	
 		if (client.request.parsingFinished() || client.request.getErrorCode() != NONE) // even on bad request server sends an answer
 		{
-			//std::cout << "Server name:" << client.getServer().readName() << std::endl;
-			assign_server_for_response(client); // I think this is a duplicate action. i might be wrong though
-			//std::cout << "Server name:" << client.getServer().readName() << std::endl;
-			client.buildResponse(); //here
+			assign_server_for_response(client);
+			client.buildResponse();
 			removeFDToSet(fd, this->_received_fds);
 			addFDToSet(fd, this->_write_fds);
 		}
@@ -271,14 +264,11 @@ namespace http {
 	{
 
 		int bytesSent;
-		//std::cout << "server response: " << std::endl << client.response.refResponseCont() << std::endl;
 		bytesSent = send(client.getSocket(), client.response.refResponseCont().c_str() + client.response.get_bytesend(),
 			 client.response.refResponseCont().size() - client.response.get_bytesend(), 0);
 		if ( bytesSent > 0)
 		{
 			client.response.set_bytesend(client.response.get_bytesend() + bytesSent);
-			// std::cout << "server send: " << client.response.get_bytesend() << std::endl;
-			// std::cout << "server response size: " << client.response.refResponseCont().size() << std::endl;
 		}
 		else if (bytesSent == 0)
 		{
@@ -303,7 +293,8 @@ namespace http {
 			//always keep the connection alive
 			removeFDToSet(fd, this->_write_fds);
 			addFDToSet(fd, this->_received_fds);
-			client.response.refResponseCont().clear();
+			std::string("").swap(client.response.refResponseCont());
+			//client.response.refResponseCont().clear();
 			client.response.set_bytesend(0);
 			client.request.clear();
 		}
@@ -313,16 +304,11 @@ namespace http {
 	{
 		for(std::vector<http::Server>::iterator it = this->_servers.begin(); it != this->_servers.end(); ++it)
 		{
-			//TODO better checking for virtual hosting
-			// std::cout << "checkingIp: " << client.getServer().readIp() << "vs: " << it->readIp() <<std::endl;
-			// std::cout << "checkingport: " << client.getServer().readPort() << "vs: " << it->readPort() <<std::endl;
-			// std::cout << "checkingname: " << client.request.getServerName() << "vs: " << it->readName() <<std::endl;
-			if (//client.getServer().readIp() == it->readIp() &&
+			if (client.getServer().readIp() == it->readIp() &&
 				client.getServer().readPort() == it->readPort() &&
 				client.request.getServerName() == it->readName()
 				)
 				{
-					//std::cout << "found server:" << it->readName() << std::endl;
 					client.setServer(*it); 
 					break ;
 				}

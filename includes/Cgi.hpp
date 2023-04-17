@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:54:06 by hrings            #+#    #+#             */
-/*   Updated: 2023/04/11 15:57:45 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/17 17:26:36 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,15 +26,16 @@ class Cgi
 		Cgi(std::string root);
 		~Cgi();
 		ErrorCode getErrorCode();
-		std::string &getBody();
+		//std::string &getBody();
 		void parse_body_for_headers();
 		void set_request(Request *request);
 		void run_cgi();
 
-	private:
+	
 		Request				*_request;
+	private:
 		ErrorCode			error_code;
-		std::string			body;
+		//std::string			body;
 		std::map<std::string, std::string> env_var;
 		char**	env;
 		char *argv[3];

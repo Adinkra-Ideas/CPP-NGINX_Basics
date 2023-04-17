@@ -104,9 +104,9 @@ void Request::setCgi_method(std::string str) {this->cgi_method = str;}
 std::string	Request::getCgi_method() {return this->cgi_method;}
 
 // returns the headers map object
-const Request::headers_map_obj&	Request::readHeaders( void ) { return headers; }
+const std::map<std::string, std::string>&	Request::readHeaders( void ) { return headers; }
 
-std::string Request::getRequestBody()
+std::string& Request::getRequestBody()
 {
 	return (this->body);
 }
@@ -160,13 +160,6 @@ void Request::first_line()
 		this->buffer.erase(0, end + 2);
 		this->parse_status = HEADERS;
 	}
-	// else
-	// {
-	// 	this->parse_status = COMPLETED;
-	// 	this->error_code = BADREQUEST;
-	// }
-	
-	
 }
 void Request::parseProtocol(std::string str)
 {
@@ -240,7 +233,6 @@ void Request::parse_headers()
 		key = http::to_lower_case(this->buffer.substr(0, delimiter));
 		if(key.empty() || not_allowed_char_in_key(key))
 		{
-			//std::cout << "key erro:" << value << std::endl;
 			this->parse_status = COMPLETED;
 			this->error_code = BADREQUEST;
 			return ;
@@ -248,7 +240,6 @@ void Request::parse_headers()
 		value = http::trim_whitespace(this->buffer.substr(delimiter + 1, end - delimiter - 1));
 		if (value.size() > MAXVALUESIZE || not_allowed_char_in_field(value) )
 		{
-			//std::cout << "field erro:" << value << std::endl;
 			this->parse_status = COMPLETED;
 			this->error_code = BADREQUEST;
 			return ;
@@ -260,7 +251,7 @@ void Request::parse_headers()
 			this->error_code = BADREQUEST;
 			return ;
 		}
-		this->headers[key] = value;				// we need to print out what'S stored in headers map object
+		this->headers[key] = value;
 		this->buffer.erase(0, end + 2);
 		end = this->buffer.find(EOL);
 	}
@@ -366,16 +357,12 @@ void Request::parse_chunks()
 	{
 		if(this->chunk_part == CHUNKSIZE)
 		{
-			
-			// if (end == std::string::npos)
-			// 	return ;
 			this->chunk_length = http::str_to_hex(this->buffer.substr(0, end));
 			this->buffer.erase(0, end + 2);
 			this->chunk_part = CHUNKDATA;
 		}
 		if(this->chunk_part == CHUNKDATA)
 		{
-			//std::cout << "stuck2?" << std::endl;
 			if (this->chunk_length == 0)
 			{
 				trailing_chunk();
@@ -421,31 +408,23 @@ ErrorCode Request::getErrorCode()
 
 void Request::clear()
 {
-	// this->error_code = NONE;
-	// this->parse_status = FIRST_LINE;
-	
 	this->parse_status = FIRST_LINE;
-			this->buffer.clear();
-			//this->method = assign.method;
-			this->serverName.clear();
-			this->path.clear();
-			this->query.clear();
-			//this->protocol.clear();
-			this->request_body.clear();
-			this->headers.clear();
-			this->chunk_length = 0;
-			this->body_length = 0;
-			this->length = 0;
-			//this->start_timer = assign.start_timer;
-			//this->last_timer = assign.last_timer;
-			this->error_code = NONE;
-			this->chunk_part = CHUNKSIZE;
-			this->body.clear();
-			this->keep_alive = true;
-			this->cgi_exe.clear();
-			this->cgi_method.clear();
-			//this->max_body_size = assign.max_body_size;
-			this->request_started = false;
+	this->buffer.clear();
+	this->serverName.clear();
+	this->path.clear();
+	this->query.clear();
+	this->request_body.clear();
+	this->headers.clear();
+	this->chunk_length = 0;
+	this->body_length = 0;
+	this->length = 0;
+	this->error_code = NONE;
+	this->chunk_part = CHUNKSIZE;
+	this->body.clear();
+	this->keep_alive = true;
+	this->cgi_exe.clear();
+	this->cgi_method.clear();
+	this->request_started = false;
 }
 
 bool Request::not_allowed_char_in_URL()
@@ -464,13 +443,10 @@ bool Request::not_allowed_char_in_field(std::string value)
 	//TODO check this for wrong char ....
 	for(std::string::iterator it = value.begin(); it != value.end(); ++it)
 	{
-    if (!(*it == '!' || (*it >= '#' && *it <= '\'') || *it == '*'|| *it == '+' || *it == '-'  || *it == '.' ||
-       (*it >= '0' && *it <= '9') || (*it >= 'A' && *it <= 'Z') || (*it >= '^' && *it <= '`') ||
-       (*it >= 'a' && *it <= 'z') || *it == '|'))
+    if (!((*it >= ' ' && *it <= '?') || (*it >= 'A'&& *it <= '~')))
 	   {
-			return false;
+			return true;
 	   }
-			
 	}
 	return false;	
 }
@@ -502,6 +478,9 @@ bool Request::has_request()
 void Request::trailing_chunk()
 {
 	size_t end = this->buffer.find(EOL);
+	size_t delimiter;
+	std::string key;
+	std::string value;
 	while (end != std::string::npos)
 	{
 		if(this->buffer.find(EOL) == 0)
@@ -509,7 +488,21 @@ void Request::trailing_chunk()
 				buffer.clear();
 				this->parse_status = COMPLETED;
 				break ;
-		}		
+		}
+		delimiter = this->buffer.find(':');
+		if (delimiter == std::string::npos)
+		{
+			this->parse_status = COMPLETED;
+			this->error_code = BADREQUEST;
+			return ;
+		}
+		key = http::to_lower_case(this->buffer.substr(0, delimiter));
+		if(key.empty() || not_allowed_char_in_key(key))
+		{
+			this->parse_status = COMPLETED;
+			this->error_code = BADREQUEST;
+			return ;
+		}	
 		this->buffer.erase(0, end + 2);
 		end = this->buffer.find(EOL);
 	}

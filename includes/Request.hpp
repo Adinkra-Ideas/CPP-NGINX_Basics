@@ -38,8 +38,6 @@ enum Chunk
 class Request
 {
 	public:
-		typedef	typename std::map<std::string, std::string>	headers_map_obj;
-
 		// Constructors
 		Request();
 		Request(const Request &copy);
@@ -59,7 +57,7 @@ class Request
 		const std::string&		readPath( void );
 		const std::string&		readQuery( void );
 		const Method&			readMethod( void );
-		std::string 			getRequestBody();
+		std::string& 			getRequestBody();
 		bool 					keepAlive();
 		const ErrorCode&		readStatusCode( void );
 		void					setStatusCode( const ErrorCode error );
@@ -67,12 +65,12 @@ class Request
 		std::string				getCgi_exe();
 		void setCgi_method(std::string str);
 		std::string	getCgi_method();
-		const headers_map_obj&	readHeaders( void );
+		const std::map<std::string, std::string>&	readHeaders( void );
 		void set_max_body_size(size_t n);
 		bool has_request();
 		
 
-	//private:
+	private:
 		void first_line();
 		void parse_headers();
 		void prepare_for_body();

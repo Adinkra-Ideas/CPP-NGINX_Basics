@@ -8,8 +8,8 @@ namespace http {
 
 	Location::Location( const Location& other ) : _path(other._path), _methods(other._methods),
 					_root(other._root), _index(other._index), _autoindex(other._autoindex),
-					_exec(other._exec), _rewrite(other._rewrite), _uploads(other._uploads) {
-		// std::cout << "Location copy constructor called " << std::endl;
+					_exec(other._exec), _rewrite(other._rewrite), _uploads(other._uploads),
+					_max_body(other._max_body) {
 		(void) other;
 	}
 
@@ -24,6 +24,7 @@ namespace http {
 			_exec = other._exec;
 			_rewrite = other._rewrite;
 			_uploads = other._uploads;
+			_max_body = other._max_body;
 		}
 		return *this;
 	}
@@ -54,4 +55,7 @@ namespace http {
 	void	Location::writeUploads(const std::string& uploads) { _uploads = uploads; }
 	const std::string&	Location::readUploads( void ) { return _uploads;}
 
-}	// namespace ft
+	void	Location::writeMaxBody(const std::size_t& max_body) { _max_body = max_body; }
+	const std::size_t&	Location::readMaxBody( void ) { return _max_body; }
+
+}	// namespace http

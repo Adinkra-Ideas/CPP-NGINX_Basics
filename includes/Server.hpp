@@ -63,7 +63,7 @@ namespace http {
 		struct	sockaddr_in		_sockAddrs;
 		unsigned int			_sockAddrs_len;			// Stores the sizeof(_sockAddrs)
 
-		int						_in_sock;				// for storing listening socket
+		int						_in_sock;				// for storing listening socket // I THINK THIS ENDED UP NOT BEING USED. WILL CHECK AGAIN TO KNOW IF NEED BE REMOVED
 
 		std::string				_name;					// (OPTIONAL)	Set the server_names or not
 		std::string				_root;					// (MANDATORY)	Define a directory or a file from where the returned file should be searched

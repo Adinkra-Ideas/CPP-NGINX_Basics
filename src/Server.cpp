@@ -2,14 +2,14 @@
 
 namespace http {
 	Server::Server( void ) : _port(), _ip(), _sockAddrs(), _sockAddrs_len(),
-						 _in_sock(), _name(), _root(),
-						 _max_body(MAXBODYSIZE), _error_page(), _locations(), cgi() {}
+								_in_sock(), _name(), _root(), _max_body(),
+								_error_page(), _locations(), cgi() {}
 
 	Server::~Server( void ) {}
 
 	Server::Server( const Server& other ) : _port(other._port), _ip(other._ip),
-						_sockAddrs(), _sockAddrs_len(), _in_sock(),
-						_name(other._name), _root(other._root), _max_body(other._max_body),
+						_sockAddrs(), _sockAddrs_len(), _in_sock(), _name(other._name),
+						 _root(other._root), _max_body(other._max_body),
 						_error_page(other._error_page), _locations(other._locations),
 						cgi(other.cgi)
 	{
@@ -71,6 +71,7 @@ namespace http {
 	//////////////////////////////////////////////////////////////////////////
 	// **** 	Returning Reference Address of Member Objects Begins	******
 	std::vector<Location>& Server::refLocations( void ) { return _locations; }
+
 	struct	sockaddr_in& Server::refSockaddrs( void ) { return _sockAddrs; }
 
 	// **** 	Returning Reference Address of Member Objects Ends	******

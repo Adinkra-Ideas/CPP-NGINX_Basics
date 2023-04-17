@@ -54,6 +54,8 @@ namespace http {
 		std::ostringstream	tmp;
 		ErrorCode			status = NONE;
 
+		// std::cout << "\n\n\nCaptured Body\n" << _request->getRequestBody() << std::endl;
+
 		// parseUrl( _request.readPath() );	// for removing the %%%% and other unformated chars from URL
 		//std::cout << "servername: " << _request.serverName << std::endl;
 		if ( _request->readStatusCode() == NONE )
@@ -66,7 +68,8 @@ namespace http {
 				cgi_request.run_cgi();
 				cgi_request.parse_body_for_headers();
 				status = cgi_request.getErrorCode();
-				this->_web_page = cgi_request.getBody();
+				this->_web_page = cgi_request._request->getRequestBody();
+				std::string("").swap(cgi_request._request->getRequestBody());
 			}
 			else if ( _request->readMethod() == GET )
 					status = doGetPost("GET");
@@ -96,18 +99,16 @@ namespace http {
 			<< "Content-Length: " << _web_page.size() << EOL
 			<< "Location: " << _location
 			<< "\n\n"
-			<< (( _request->readMethod() != HEAD && _request->readMethod() != PUT ) ? _web_page.c_str() : "");
-
+			<< (( _request->readMethod() != HEAD && _request->readMethod() != PUT ) ? _web_page : "");
 		// clear() _response_content before assigning it the new response
-		_response_content.clear();
+		std::string("").swap(_response_content);
 		_response_content = tmp.str();
-		//std::cout << "server response : \n" << _response_content << std::endl;
 		// clear() all other data 
 		_request->clear();
-		_loc_file_path.clear();
-		_web_page.clear();
-		_location.clear();
-		_root_directory.clear();
+		std::string("").swap(_loc_file_path);
+		std::string("").swap(_web_page);
+		std::string("").swap(_location);
+		std::string("").swap(_root_directory);
 	}
 	void Response::set_bytesend(int n)
 	{
@@ -165,9 +166,6 @@ namespace http {
 		// copy directory part of web_url to web_url_dir
 		// and filename part of web_url to web_url_fname
 		web_url = _request->readPath();
-		// if (_request->readPath().find("/post_body") != std::string::npos && _request->getRequestBody().size() > 100)
-		// 	return CONTENTTOOLARGE;
-		//std::cout <<"web_url:" << web_url << std::endl;
 		if ( (status = extractDirFromWebUrl(web_url_dir, web_url_fname, web_url)) != NONE )
 			return status;
 
@@ -175,13 +173,10 @@ namespace http {
 		std::vector<http::Location>::iterator	it = _server->refLocations().begin();
 		if ( (status = setIteratorToLocationContext(it, web_url_dir, web_url_fname, method)) != NONE ) // we need to send you file_name
 			return status;
-		// std::cout << "web_url: " << web_url << "$" << std::endl;
-		// std::cout << "web_url_fname: " << web_url_fname << "$" <<std::endl;
-		// std::cout << "web_url_dir: " << web_url_dir << "$" <<std::endl;
-		// std::cout << "_loc_file_path: " << _loc_file_path << "$" <<std::endl;
-		// std::cout << "_root_directory: " << _root_directory << "$" <<std::endl;
-		if ( (status = setIteratorToLocationContext(it, web_url_dir, web_url_fname, method)) != NONE )
-			return status;
+
+		// Check If Location context has max_body value set. If yes, compare accordingly
+		if ( it->readMaxBody() && it->readMaxBody() < _request->getRequestBody().size() )
+			return CONTENTTOOLARGE;
 
 		// Saving data/body received from requests, if any
 		std::ofstream 		_fout;
@@ -189,11 +184,10 @@ namespace http {
 		buff_tmp << (it->readUploads().size() > 0 ? it->readUploads() : "queryData") << "/"
 			<< ( _request->getRequestBody().size() > 0 ? "postQery" : _request->readQuery().size() > 0 ? "getQery" : "tmp");
 		_fout.open(buff_tmp.str().c_str(), std::ios::out | std::ios::app );
-		// std::cout << "tmp_file:" << buff_tmp.str() << std::endl;
 		if (! _fout.good() )
 			print_status(ft_RED, "Skipping GET/POST/PUT Query Backup Because Uploads Path Not Created");
 		else {
-			if ( strcmp(method, "POST") == 0 || strcmp(method, "PUT") == 0 /*_request.getRequestBody().size() > 0*/ )				// it's a post or put request
+			if ( strcmp(method, "POST") == 0 || strcmp(method, "PUT") == 0 )				// it's a post or put request
 				collatePostQuery(_request->getRequestBody(), _fout, it->readUploads());
 			else if ( _request->readQuery().size() > 0 )				// it's a get request that has query parameters			
 				_fout << _request->readQuery() << std::endl;
@@ -220,8 +214,7 @@ namespace http {
 			std::stringstream buff_tmp;
 			buff_tmp << fin.rdbuf();
 			fin.close();
-			// It is at this point that PHP or other backend scripters are exec'd on the file
-			_web_page.append(buff_tmp.str().c_str());
+			_web_page.append(buff_tmp.str().c_str(), buff_tmp.str().length());
 		}
 		return OK;
 	}
@@ -309,36 +302,6 @@ namespace http {
 		if ( flag == false  )
 			return METHODNOTALLOWED;
 		return NONE;
-	
-		// const std::string		*ptr = &path;
-		// std::string tmp_loc;
-		// size_t max_hit_length = 0;
-		// std::vector<http::Location>::iterator tmp_iter;
-		// // if ((*ptr).empty())
-		// // 	(*ptr) = "/";
-		// while ( it != _server->refLocations().end() ) 
-		// {
-		// 	if ((std::find(it->refMethods().begin(), it->refMethods().end(), method) != it->refMethods().end()) &&
-		// 		(*ptr).find(it->readPath()) == 0)
-		// 		{
-		// 			if (max_hit_length < it->readPath().size())
-		// 			{
-		// 				max_hit_length = it->readPath().size();
-		// 				tmp_iter = it;
-		// 				tmp_loc = it->readPath();
-		// 				_root_directory = it->readRoot();
-		// 			}
-		// 		}
-		// 	it++;
-		// }
-		// if (max_hit_length == 0)
-		// 	return METHODNOTALLOWED;
-		// else
-		// {
-		// 	_loc_file_path = _root_directory + path.substr(tmp_loc.size()) + fname;
-		// 	it = tmp_iter;
-		// 	return NONE;
-		// }
 	}
 
 	// **************************************************************************
@@ -401,12 +364,8 @@ namespace http {
 			_uploaded_file.open(file_name.c_str(), std::ios::out | std::ios::trunc );
 			if ( _uploaded_file.good() ) {
 				_uploaded_file << this->_request->getRequestBody();
-				//std::cout << "loc_file_path:" << this->_loc_file_path << std::endl;
 			}
 			_uploaded_file.close();
-			// std::cout << "none form upload:" << uploads_dir << std::endl;
-			// std::cout << "none form upload:" << this->_loc_file_path << std::endl;
-			// std::cout << "file name empty?:" << _request.readPath().substr(_request.readPath().rfind('/') + 1) << std::endl;
 		}
 		_fout.close();
 	}
@@ -425,7 +384,7 @@ namespace http {
 		std::size_t		pos;
 
 		// Checking if we are returning an error page to 
-		if ( status != OK || status != MOVEDPERMANENTLY || status != FOUND )  {
+		if ( !(status == OK || status == MOVEDPERMANENTLY || status == FOUND ))  {
 			tmp.insert( 0, "text/html" );
 			return tmp;
 		}
@@ -497,7 +456,6 @@ namespace http {
 		// loc_file_path == public_html/
 		// Check if 301 redirection is necessary for Client's requested path
 		// If yes, set status to MOVEDPERMANENTLY and store new Web URL to _location
-		// std::cout << "loc file path:" << loc_file_path << " is dir? " << ft::isDirectory(loc_file_path) << std::endl;
 		if ( ft::isDirectory(loc_file_path) ) {
 			pos = web_url_path.size();
 			if ( pos > 2 && web_url_path.at(pos - 1) != '/' )	// pos > 2 means web_url_path must hold at least "/xx" chars count

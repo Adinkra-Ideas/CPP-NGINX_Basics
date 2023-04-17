@@ -96,9 +96,10 @@ namespace http {
 		parse_to_str(serv.readErrorPage(), "\nerror_page", context);
 		parse_to_str(max_body_tmp, "\nclient_max_body_size", context);
 		parse_for_cgi(serv.getCgi(), context);
-		max_body_to_int(serv.readMaxBody(), max_body_tmp);
+		// max_body_to_int(serv.readMaxBody(), max_body_tmp);
 		setup_server_host(serv.refSockaddrs(), serv.readSockAddrLen(), serv.readIp(), serv.readPort());
 
+		serv.writeMaxBody( ((std::atol(max_body_tmp.c_str()) > 0) ? std::atol(max_body_tmp.c_str()) : 0) );
 		servers.push_back(serv);
 		print_status(ft_GREEN, "Server Context Parsed Successfully!");
 
@@ -106,13 +107,13 @@ namespace http {
 	}
 
 	// Simply converts the string max_body_tmp to a usable integer stored in _max_body
-	void	ConfigParser::max_body_to_int(const std::size_t& _max_body, std::string& max_body_tmp) {
-		std::size_t&		max_body = const_cast<std::size_t&>(_max_body);
+	// void	ConfigParser::max_body_to_int(const std::size_t& _max_body, std::string& max_body_tmp) {
+	// 	std::size_t&		max_body = const_cast<std::size_t&>(_max_body);
 
-		max_body = (std::atol(max_body_tmp.c_str()) > 0) ? std::atol(max_body_tmp.c_str()) : 0;
-		if (max_body)
-			max_body *= INTtoKBi;
-	}
+	// 	max_body = (std::atol(max_body_tmp.c_str()) > 0) ? std::atol(max_body_tmp.c_str()) : 0;
+	// 	if (max_body)
+	// 		max_body *= INTtoMBi;
+	// }
 
 	// **********************************************************************
 	// Uses the host address (IP:PORT) stored in ip(param3)					*
@@ -163,6 +164,7 @@ namespace http {
 		Location		loc;
 		std::size_t		pos = 0;
 		std::size_t		count = std::strlen("location");
+		std::string		max_body_tmp;
 
 		if ( (pos = context.find("location")) != std::string::npos && (context[pos - 1] == '\n') ) {
 			if ( (count = context.find_first_not_of("\t ", pos + count)) != std::string::npos ) {
@@ -182,7 +184,9 @@ namespace http {
 					parse_to_str(loc.readExec(), "\nexec", _context);
 					parse_to_str(loc.readRewrite(), "\nrewrite", _context);
 					parse_to_str(loc.readUploads(), "\nuploads", _context);
+					parse_to_str(max_body_tmp, "\nclient_max_body_size", _context);
 
+					loc.writeMaxBody( ((std::atol(max_body_tmp.c_str()) > 0) ? std::atol(max_body_tmp.c_str()) : 0) );
 					locations.push_back(loc);
 					context.erase(pos, temp_end - (pos - 1));
 
@@ -303,8 +307,6 @@ namespace http {
 			{
 				exit_with_error("Wrong format on cgi, need: extension, Method, exe name");
 			}
-			// for (std::vector<std::string>::iterator it = tmp.begin(); it != tmp.end(); ++it)
-			// 	std::cout << "in tmp:" << *it << std::endl;
 			if (cgi_map.find(tmp[0])!= cgi_map.end())
 				exit_with_error("Redeclaration of an extension for cgi");
 			cgi_map[tmp[0]] = std::make_pair(tmp[1], tmp[2]);
