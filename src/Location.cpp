@@ -10,7 +10,6 @@ namespace http {
 					_root(other._root), _index(other._index), _autoindex(other._autoindex),
 					_exec(other._exec), _rewrite(other._rewrite), _uploads(other._uploads),
 					_max_body(other._max_body) {
-		// std::cout << "Location copy constructor called " << std::endl;
 		(void) other;
 	}
 

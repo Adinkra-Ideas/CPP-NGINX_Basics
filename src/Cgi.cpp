@@ -6,13 +6,13 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:56:47 by hrings            #+#    #+#             */
-/*   Updated: 2023/04/11 19:12:10 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/17 19:15:09 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Cgi.hpp"
 
-Cgi::Cgi(std::string root) : error_code(NONE), body(""), server_root(root)
+Cgi::Cgi(std::string root) : error_code(NONE), server_root(root)
 {
 	char *cwd = getcwd(NULL, 0);
   	if (!cwd)
@@ -42,12 +42,6 @@ Cgi::~Cgi()
 ErrorCode Cgi::getErrorCode()
 {
 	return (this->error_code);
-}
-std::string &Cgi::getBody()
-{
-	// if (this->body.find("HTTP/1.1 200 OK\r\n") != 0)
-	// 	this->body.insert(0, "HTTP/1.1 200 OK\r\n");
-	return (this->body);
 }
 
 void Cgi::set_request(Request *request)
@@ -95,7 +89,6 @@ void Cgi::initEnv()
 	this->env_var["REQUEST_URI"] = this->_request->readPath();
 	this->env_var["SCRIPT_NAME"] = _request->getCgi_exe();
 	this->env_var["QUERY_STRING"] = this->_request->readQuery();
-	//this->env_var["REMOTE_ADDR"] = this->_request->headers["host"];
 	this->env_var["REQUEST_URI"] = cwd_ + this->_request->readPath();
 	this->env_var["SERVER_SOFTWARE"] = "WEBSERV/1.0";
 	for (std::map<std::string, std::string>::iterator it = this->_request->headers.begin();
@@ -120,15 +113,13 @@ void Cgi::initEnv()
 	}
 	size_t index = this->_request->readPath().find_last_of("/");
   	argv[0] = strdup(this->file_path.c_str());
-  	argv[1] = strdup(_request->getCgi_exe().c_str()); // strdup((cwd_ + this->_request->readPath()).c_str());
+  	argv[1] = strdup(_request->getCgi_exe().c_str());
 	argv[2] = NULL;
 	this->execute_dir = this->working_dir + this->_request->readPath().substr(0, index);
 }
 
 void Cgi::executeScript()
 {
-	//std::cout << "exec_path:" << file_path << std::endl;
-	//std::cout << "server root:" << this->server_root << std::endl;
 	if (this->_request->readMethod() == GET && this->_request->getCgi_method() == "GET")
 		runGetScript();
 	else if (this->_request->readMethod() == POST && this->_request->getCgi_method() == "POST")
@@ -177,7 +168,6 @@ void Cgi::runGetScript()
 			}
 			usleep(500);
 		}while(difftime(time(NULL), start) < TIMEOUTTIME);
-		//TODO kill child if timeout
 		if (WEXITSTATUS(status)) {
 			http::print_status(ft_RED, "execusion of cgi script failed");
 			this->error_code = INTERNALSERVERERROR;
@@ -191,6 +181,7 @@ void Cgi::runGetScript()
 			http::print_status(ft_RED, "open file error read");
 			return ;
 		}
+		this->_request->getRequestBody().clear();
 		lseek(tmp_fd, 0, SEEK_SET);
 		while (1)
 		{	
@@ -205,7 +196,7 @@ void Cgi::runGetScript()
 				std::remove(tmp_file.c_str());
 				break ;
 			}				
-			this->body += std::string(readbuffer);	
+			this->_request->getRequestBody() += std::string(readbuffer);	
 			memset (readbuffer,0,4096);
 			
 		}
@@ -244,7 +235,6 @@ void Cgi::runPostScript()
 	else
 	{
 		close(pip[0]);
-		//std::cout << "request body:" << this->_request->getRequestBody() << std::endl;
 		if (this->_request->getRequestBody().length())
 		{
 			if (write(pip[1], this->_request->getRequestBody().c_str(), this->_request->getRequestBody().length()) <= 0)
@@ -254,6 +244,7 @@ void Cgi::runPostScript()
 			}
 		}
 		close(pip[1]);
+		this->_request->getRequestBody().clear();
 		time_t start = time(NULL);
 		int status;
 		int wait_return;
@@ -298,11 +289,10 @@ void Cgi::runPostScript()
 				close(tmp_fd);
 				std::remove(tmp_file.c_str());
 				http::print_status(ft_RED, "Error reading cgi output");
-				this->body.clear();
 				this->error_code = INTERNALSERVERERROR;
 				return ;
 			}		
-			this->body.insert(this->body.length(), readbuffer, bytes_read);		
+			this->_request->getRequestBody().insert(this->_request->getRequestBody().length(), readbuffer, bytes_read);		
 		}
 		this->error_code = OK;
 	}
@@ -311,24 +301,24 @@ void Cgi::runPostScript()
 void Cgi::parse_body_for_headers()
 {
 	size_t pos;
-	size_t end = this->body.find(EOL);
+	size_t end = this->_request->getRequestBody().find(EOL);
 	std::string key;
 	std::string value;
 	
 	while ( end != std::string::npos)
 	{
-		if (this->body.find(EOL) == 0)
+		if (this->_request->getRequestBody().find(EOL) == 0)
 		{
-			this->body.erase(0, end + 2);
+			this->_request->getRequestBody().erase(0, end + 2);
 			break;
 		}
-		if ((pos = this->body.find(':', 0)) != std::string::npos)
+		if ((pos = this->_request->getRequestBody().find(':', 0)) != std::string::npos)
 		{
-			key = this->body.substr(0, pos);
-			value = http::trim_whitespace(this->body.substr(pos + 1, end - pos -1));
+			key = this->_request->getRequestBody().substr(0, pos);
+			value = http::trim_whitespace(this->_request->getRequestBody().substr(pos + 1, end - pos -1));
 			this->_request->headers[http::to_lower_case(key)] = value;
 		}
-		this->body.erase(0, end + 2);
-		end = this->body.find(EOL);
+		this->_request->getRequestBody().erase(0, end + 2);
+		end = this->_request->getRequestBody().find(EOL);
 	}
 }
