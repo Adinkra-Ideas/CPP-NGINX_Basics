@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:56:47 by hrings            #+#    #+#             */
-/*   Updated: 2023/04/17 19:15:09 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/18 09:43:28 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -174,31 +174,21 @@ void Cgi::runGetScript()
 			return ;
         }
 		std::string tmp_file(this->working_dir + "/cgi-bin/tmp");
-		int tmp_fd;
-		tmp_fd = open(tmp_file.c_str(), O_RDONLY);
-		if (tmp_fd < 0)
+		std::ifstream		output;
+		std::ostringstream	buff_tmp;
+		output.open(tmp_file.c_str());
+		if (output.good() )
+		{
+			buff_tmp.str("");
+			buff_tmp << output.rdbuf();
+			output.close();
+			std::remove(tmp_file.c_str());
+			this->_request->getRequestBody().insert(0, buff_tmp.str());		
+		}
+		else
 		{
 			http::print_status(ft_RED, "open file error read");
 			return ;
-		}
-		this->_request->getRequestBody().clear();
-		lseek(tmp_fd, 0, SEEK_SET);
-		while (1)
-		{	
-			int bytes_read;
-			char readbuffer[4096 + 1];
-			memset (readbuffer,0,4096);
-			
-			bytes_read = read(tmp_fd, readbuffer, 4096);
-			if (bytes_read <= 0)
-			{
-				close(tmp_fd);
-				std::remove(tmp_file.c_str());
-				break ;
-			}				
-			this->_request->getRequestBody() += std::string(readbuffer);	
-			memset (readbuffer,0,4096);
-			
 		}
 		this->error_code = OK;
 	}
@@ -239,8 +229,8 @@ void Cgi::runPostScript()
 		{
 			if (write(pip[1], this->_request->getRequestBody().c_str(), this->_request->getRequestBody().length()) <= 0)
 			{
-			this->error_code = INTERNALSERVERERROR;
-			return ;
+				this->error_code = INTERNALSERVERERROR;
+				return ;
 			}
 		}
 		close(pip[1]);
@@ -265,34 +255,21 @@ void Cgi::runPostScript()
 			return ;
         }
 		std::string tmp_file(this->working_dir + "/cgi-bin/tmp");
-		int tmp_fd;
-		tmp_fd = open(tmp_file.c_str(), O_RDONLY);
-		if (tmp_fd < 0)
+		std::ifstream		output;
+		std::ostringstream	buff_tmp;
+		output.open(tmp_file.c_str());
+		if (output.good() )
+		{
+			buff_tmp.str("");
+			buff_tmp << output.rdbuf();
+			output.close();
+			std::remove(tmp_file.c_str());
+			this->_request->getRequestBody().insert(0, buff_tmp.str());		
+		}
+		else
 		{
 			http::print_status(ft_RED, "open file error read");
 			return ;
-		}
-		lseek(tmp_fd, 0, SEEK_SET);
-		while (1)
-		{	
-			int bytes_read;
-			char readbuffer[4096 + 1];
-			bytes_read = read(tmp_fd, readbuffer, 4096);
-			if (bytes_read == 0)
-			{
-				close(tmp_fd);
-				std::remove(tmp_file.c_str());
-				break ;
-			}
-			else if (bytes_read < 0)
-			{
-				close(tmp_fd);
-				std::remove(tmp_file.c_str());
-				http::print_status(ft_RED, "Error reading cgi output");
-				this->error_code = INTERNALSERVERERROR;
-				return ;
-			}		
-			this->_request->getRequestBody().insert(this->_request->getRequestBody().length(), readbuffer, bytes_read);		
 		}
 		this->error_code = OK;
 	}
