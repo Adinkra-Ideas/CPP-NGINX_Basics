@@ -3,13 +3,18 @@
 namespace http {
 
 	// Constructors
-	Response::Response( void ) : byte_send(0)
+	Response::Response( void ) : _request(NULL), _server(NULL),
+			_loc_file_path(), _web_page(), _response_content(),
+			_location(), _root_directory(), byte_send(0)
 	{
 	}
 
-	Response::Response(const Response &copy) : byte_send(0)
+	Response::Response( const Response &other ) : _request(other._request), 
+			_server(other._server), _loc_file_path(other._loc_file_path),
+			_web_page(other._web_page), _response_content(other._response_content),
+			_location(other._location), _root_directory(other._root_directory),
+			byte_send(other.byte_send)
 	{
-		(void) copy;
 	}
 
 	// Destructor
@@ -18,10 +23,18 @@ namespace http {
 	}
 
 	// Operators
-	Response & Response::operator=(const Response &assign)
+	Response & Response::operator=( const Response &other )
 	{
-		this->byte_send = assign.byte_send;
-		(void) assign;
+		if ( this != &other ) {
+			_request = other._request; 
+			_server = other._server;
+			_loc_file_path = other._loc_file_path;
+			_web_page = other._web_page;
+			_response_content = other._response_content;
+			_location = other._location;
+			_root_directory = other._root_directory;
+			byte_send = other.byte_send;
+		}
 		return *this;
 	}
 

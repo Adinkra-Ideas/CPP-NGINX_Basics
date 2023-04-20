@@ -121,6 +121,7 @@ bool Request::keepAlive()
 
 void Request::parse(std::string &buffer)
 {
+	// std::cout << "\n\n\nTheHeader" << buffer << std::endl;
 	request_started = true;
 	this->buffer += buffer;
 	buffer.clear();

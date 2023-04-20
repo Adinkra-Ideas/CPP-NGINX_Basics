@@ -80,7 +80,7 @@ namespace http {
 		ft::initSignal();
 	}
 
-		void    ServerManager::runServers( void ) {
+	void    ServerManager::runServers( void ) {
 		fd_set			_received_fds_tmp;
 		fd_set 			_write_fds_tmp;
 		int 			ret;
@@ -107,7 +107,7 @@ namespace http {
 			{
 				// If a socket FD received an incoming request, then the Server config object
 				// mapped to the socket FD is passed to acceptConnection()
-				if( FD_ISSET(i, &_received_fds_tmp) && this->_running_servers.count(i) )
+				if( FD_ISSET(i, &_received_fds_tmp) && this->_running_servers.count(i) )	// == 1	// Candidate line if We need to implement a consideration for server_name context
 					acceptConnection(this->_running_servers.find(i)->second);
 
 				// Checking if acceptConnection() has already accepted this FD successfully
@@ -227,6 +227,7 @@ namespace http {
 		// Reading Clients httpRequest details from their 
 		// outbound socket addr FD into buffer
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
+		std::cout << "client request:" << std::endl << buffer << std::endl;
 		if (bytes_read == 0)
 		{
 			print_status(ft_GREEN, "Closing connection because no activity");
