@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/28 13:12:03 by hrings            #+#    #+#             */
-/*   Updated: 2023/04/17 19:11:21 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/21 18:23:56 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,23 +23,19 @@ Client::Client(const Client &copy) :
 		response(copy.response),
 		server(copy.server),
 		client_socket(copy.client_socket),
-		client_address(copy.client_address)
-
+		_clientAddrs(copy._clientAddrs),
+		time_of_last_msg(copy.time_of_last_msg),
+		_listen(copy._listen)
+		
 {
 }
 
-Client::Client(http::Server &server)
+Client::Client(http::Listen listen, struct	sockaddr_in	clientAddrs) : 
+	_clientAddrs(clientAddrs), _listen(listen)
 {
 	// this->request = NULL;
 	// this->response = NULL;
-	this->server = server;
-	size_t max_body = server.readMaxBody();
-	if (max_body)
-		this->request.set_max_body_size(max_body);
-	else
-		this->request.set_max_body_size(2147483647);
 }
-
 Client &Client::operator=(const Client &assign)
 {
 	if (this != &assign)
@@ -48,8 +44,9 @@ Client &Client::operator=(const Client &assign)
 		this->response = assign.response;
 		this->server = assign.server;
 		this->client_socket = assign.client_socket;
-		this->client_address = assign.client_address;
+		this->_clientAddrs = assign._clientAddrs;
 		this->time_of_last_msg = assign.time_of_last_msg;
+		this->_listen = assign._listen;
 	}
 	return (*this);
 }
@@ -62,10 +59,11 @@ void	Client::setSocket(int &fd)
 {
 	this->client_socket = fd;
 }
-void	Client::setAddress(sockaddr_in &addr)
+std::string	Client::get_Ip_Address()
 {
-	this->client_address = addr;
+	return (inet_ntoa(_clientAddrs.sin_addr));
 }
+
 void	Client::setServer(http::Server &server)
 {
 	this->server = server;
@@ -81,7 +79,10 @@ int	Client::getSocket()
 	return (this->client_socket);
 }
 
-
+http::Listen Client::getListen()
+{
+	return (this->_listen);	
+}
 void Client::updateTime()
 {
 	this->time_of_last_msg = time(NULL);

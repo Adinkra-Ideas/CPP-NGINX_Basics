@@ -40,7 +40,8 @@ namespace http {
 	void    ServerManager::setupServers( void )
 	{
 		std::ostringstream	msg;
-
+		std::vector<Listen> list_of_bind;
+		int socked_fd;
 		// we create registry to store each of the FDs allocated to each server context in config
 		std::ofstream 		fout;
 		fout.open("FD_Registry.txt", std::ios::out | std::ios::trunc );
@@ -49,33 +50,64 @@ namespace http {
 
 		for (std::vector<http::Server>::iterator iter = this->_servers.begin(); iter != this->_servers.end(); ++iter)
 		{
-			iter->bindServerSockAddr();
-			// Checking if the FD of this server's socket Address
-			// will be okay to use in fd_set data type
-			if ( iter->readInSock() >= FD_SETSIZE ) {
-				msg << "Allocated Socket FD " << iter->readInSock() 
-					<< " is Greater than FD_SETSIZE value on Host Kernel"; 
-				exit_with_error(msg.str());
+			for (std::vector<Listen>::iterator it_li = iter->getListen().begin(); it_li != iter->getListen().end(); ++it_li)
+			{
+				
+				if (std::find(list_of_bind.begin(), list_of_bind.end(), *it_li) == list_of_bind.end())
+				{
+					if ( (socked_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+					{
+						exit_with_error("Socket() failed");
+					}
+					if ( socked_fd >= FD_SETSIZE ) {
+						msg << "Allocated Socket FD " << iter->readInSock() 
+						<< " is Greater than FD_SETSIZE value on Host Kernel"; 
+						exit_with_error(msg.str());
+					}
+					if ( fcntl(iter->readInSock(), F_SETFL, O_NONBLOCK) == -1 ) {
+						msg << "Setting Socket FD "
+						<<  socked_fd
+						<< " to Non-Block Mode Failed"; 
+						exit_with_error(msg.str());
+					}
+					struct sockaddr_in address;
+					memset(&address, 0, sizeof(address));
+					address.sin_family = AF_INET;
+					address.sin_port = htons(it_li->port);
+					address.sin_addr.s_addr = inet_addr(it_li->ip.c_str());
+					int optval = 1;
+					socklen_t optlen = sizeof(optval);
+					if (setsockopt(socked_fd, SOL_SOCKET, SO_REUSEADDR, &optval, optlen) < 0 )
+					{
+						msg << "setsockopt failed on " << socked_fd;
+						exit_with_error(msg.str());
+					}
+					if(setsockopt(socked_fd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
+						msg << "setsockopt failed on " << socked_fd;
+						exit_with_error(msg.str());
+   					}
+					if (bind(socked_fd, (struct sockaddr *)&address, sizeof(address)) == -1) {
+						msg << "bind went wrong for host " << it_li->ip << ", " << it_li->port;
+						exit_with_error(msg.str());
+					}
+					addFDToSet(socked_fd, this->_received_fds);
+					this->_running_servers[socked_fd] = *it_li;
+					fout << socked_fd << "\r\n";
+					if ( listen(socked_fd, MAX_QUEUE) ) {
+						msg << "Socket listening on Sock FD " << socked_fd
+						<< " failed";
+						exit_with_error(msg.str());
+					}
+					std::ostringstream	msg2;
+					list_of_bind.push_back(*it_li);
+					msg2 << "Connected to " << it_li->ip << ":" << it_li->port;
+					print_status(ft_GREEN, msg2.str());
+				}
 			}
-
 			fout << iter->readInSock() << "\r\n";
-			iter->startListen(MAX_QUEUE);
-
-			// Setting the Socket FD flag to Non-Block Mode
-			if ( fcntl(iter->readInSock(), F_SETFL, O_NONBLOCK) == -1 ) {
-				msg << "Setting Socket FD "
-					<< iter->readInSock() 
-					<< " to Non-Block Mode Failed"; 
-				exit_with_error(msg.str());
-			}
-
-			// Adding the Socket FD to list of received FD stored in _received_fds
-			FD_SET(iter->readInSock(), &this->_received_fds);
-
-			if (iter->readInSock() > this->_biggest_fd)
-				this->_biggest_fd = iter->readInSock();
-			this->_running_servers[iter->readInSock()] = *iter;
 		}
+		if (list_of_bind.empty())
+			exit_with_error("Failed to start an Server");
 		fout.close();
 		ft::initSignal();
 	}
@@ -107,8 +139,9 @@ namespace http {
 			{
 				// If a socket FD received an incoming request, then the Server config object
 				// mapped to the socket FD is passed to acceptConnection()
+				// check if coonection ...
 				if( FD_ISSET(i, &_received_fds_tmp) && this->_running_servers.count(i) )	// == 1	// Candidate line if We need to implement a consideration for server_name context
-					acceptConnection(this->_running_servers.find(i)->second);
+					acceptConnection(i);
 
 				// Checking if acceptConnection() has already accepted this FD successfully
 				// and initialized a connected_clients Map element for it
@@ -164,31 +197,32 @@ namespace http {
 	// A Map element is added to this->connected_clients mapping*
 	// this client's outgoing Socket Fd to his Client object	*
 	// **********************************************************
-	void ServerManager::acceptConnection(http::Server &server)
+	void ServerManager::acceptConnection(int fd)
 	{
 		std::ostringstream	msg;
-	
+
 		msg << "New Client is Connecting to Socket Address "
-			<< inet_ntoa(server.refSockaddrs().sin_addr) << ":" 
-			<< ntohs(server.refSockaddrs().sin_port);
+			<< this->_running_servers[fd].ip << ":" 
+			<< this->_running_servers[fd].port;
 		print_status(ft_YELLOW, msg.str());
 		
 		struct sockaddr_in	client_address;
 		long  				client_address_size = sizeof(client_address);
 		int 				client_sock;
-		Client  			new_client(server); 	// Instantiates a Client Object that stores a copy of this client's Server config to its member 
+		Client  			new_client(this->_running_servers[fd], client_address); 	// Instantiates a Client Object that stores a copy of this client's Server config to its member 
 
-		client_sock = accept(server.readInSock(), (struct sockaddr *)&client_address,(socklen_t*)&client_address_size);
+		client_sock = accept(fd, (struct sockaddr *)&client_address,(socklen_t*)&client_address_size);
 		if ( client_sock < 0 )
 		{
 			print_status(ft_RED, "::acceptConnection() Error! A call to Accept() failed");
 			return ;
 		}
+		new_client.request.set_client_ip(new_client.get_Ip_Address());
 		int optval = 1;
 		socklen_t optlen = sizeof(optval);
 		if(setsockopt(client_sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
-			msg << "setsockopt failed " << client_sock;
-			exit_with_error(msg.str());
+			print_status(ft_RED, "setsockopt failed ");
+			return ;
    		}
 		// adding this client's sock addr to rcvd_fds_tmp so that the if() condition
 		// right after the line that called this function from runServers() can pick it up
@@ -207,10 +241,7 @@ namespace http {
 		msg.str("");
 		msg << "Client " << inet_ntoa(client_address.sin_addr)
 			<< ":" << ntohs(client_address.sin_port)
-			<< " Connected to "
-			<< inet_ntoa(server.refSockaddrs().sin_addr) << ":"
-			<< ntohs(server.refSockaddrs().sin_port)
-			<< " Successfully!";
+			<< " Connected Successfully!";
 		print_status(ft_GREEN, msg.str());
 	
 	}
@@ -227,7 +258,7 @@ namespace http {
 		// Reading Clients httpRequest details from their 
 		// outbound socket addr FD into buffer
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		std::cout << "client request:" << std::endl << buffer << std::endl;
+		//std::cout << "client request:" << std::endl << buffer << std::endl;
 		if (bytes_read == 0)
 		{
 			print_status(ft_GREEN, "Closing connection because no activity");
@@ -253,7 +284,7 @@ namespace http {
 		}	
 		if (client.request.parsingFinished() || client.request.getErrorCode() != NONE) // even on bad request server sends an answer
 		{
-			assign_server_for_response(client);
+			client.setServer(assign_server_for_response(client));
 			client.buildResponse();
 			removeFDToSet(fd, this->_received_fds);
 			addFDToSet(fd, this->_write_fds);
@@ -301,18 +332,33 @@ namespace http {
 		}
 	}
 
-	void    ServerManager::assign_server_for_response(Client &client) // I thought the processing server has previously being assigned to this client.server() at the point of declaration in acceptConnection()?
+	Server&    ServerManager::assign_server_for_response(Client &client) // I thought the processing server has previously being assigned to this client.server() at the point of declaration in acceptConnection()?
 	{
-		for(std::vector<http::Server>::iterator it = this->_servers.begin(); it != this->_servers.end(); ++it)
+		std::vector<Server*> possible_servers;
+		for (std::vector<http::Server>::iterator iter = this->_servers.begin(); iter != this->_servers.end(); ++iter)
 		{
-			if (client.getServer().readIp() == it->readIp() &&
-				client.getServer().readPort() == it->readPort() &&
-				client.request.getServerName() == it->readName()
-				)
+			for (std::vector<Listen>::iterator it_li = iter->getListen().begin(); it_li != iter->getListen().end(); ++it_li)
+			{
+				if (*it_li == client.getListen())
 				{
-					client.setServer(*it); 
-					break ;
+					possible_servers.push_back(&(*iter));	
 				}
+			}
+		}
+		if (possible_servers.size() == 1)
+			return *possible_servers.front();
+		else
+		{
+			std::string req_server_name = client.getRequest().headers["host"].substr(0, client.getRequest().headers["host"].find(':'));
+			for (std::vector<Server*>::iterator it = possible_servers.begin(); it != possible_servers.end(); ++it)
+			{
+				if (!(**it).readName().compare(req_server_name))
+				{
+					return **it;
+				}
+					
+			}
+			return *(possible_servers.front());
 		}
 	}
 

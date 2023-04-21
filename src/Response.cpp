@@ -67,16 +67,12 @@ namespace http {
 		std::ostringstream	tmp;
 		ErrorCode			status = NONE;
 
-		// std::cout << "\n\n\nCaptured Body\n" << _request->getRequestBody() << std::endl;
-
-		// parseUrl( _request.readPath() );	// for removing the %%%% and other unformated chars from URL
-		//std::cout << "servername: " << _request.serverName << std::endl;
 		if ( _request->readStatusCode() == NONE )
 		{
 			//
 			if (isCgiFile(this->_request->readPath()))
 			{
-				Cgi cgi_request(this->_server->readRoot());
+				Cgi cgi_request(this->_server);
 				cgi_request.set_request(this->_request);
 				cgi_request.run_cgi();
 				cgi_request.parse_body_for_headers();
@@ -110,6 +106,8 @@ namespace http {
 			<< ft::translateErrorCode(status) << EOL
 			<< "Content-Type: " << getContentType(_loc_file_path, status) << EOL
 			<< "Content-Length: " << _web_page.size() << EOL
+			<< "Server: " << "webserv/1.0" << EOL
+			<< "Date: " << http::get_http_date() << EOL
 			<< "Location: " << _location
 			<< "\n\n"
 			<< (( _request->readMethod() != HEAD && _request->readMethod() != PUT ) ? _web_page : "");
@@ -186,7 +184,6 @@ namespace http {
 		std::vector<http::Location>::iterator	it = _server->refLocations().begin();
 		if ( (status = setIteratorToLocationContext(it, web_url_dir, web_url_fname, method)) != NONE ) // we need to send you file_name
 			return status;
-
 		// Check If Location context has max_body value set. If yes, compare accordingly
 		if ( it->readMaxBody() && it->readMaxBody() < _request->getRequestBody().size() )
 			return CONTENTTOOLARGE;
@@ -292,7 +289,6 @@ namespace http {
 		pos = search_key.size();
 		if ( pos && search_key.at(pos - 1) != '/' )
 			search_key.push_back('/');
-
 		while ( it != _server->refLocations().end() ) {
 			if ( ! it->readPath().compare(search_key) && (std::find(it->refMethods().begin(),
 						it->refMethods().end(), method) != it->refMethods().end()) ) {
@@ -486,7 +482,7 @@ namespace http {
 				fin.open(tmp_local_path.c_str());
 				if ( ! fin.good() ) {
 					_location.clear();
-
+					
 					// if autoindex is "on", directories that do not have an index.html file will 
 					// will list their contents intead of showing "403 forbidden" error
 					if ( ! it->readAutoind().compare("on") ) {

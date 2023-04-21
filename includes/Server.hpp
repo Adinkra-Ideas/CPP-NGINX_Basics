@@ -17,6 +17,7 @@
 
 namespace http {
 
+
 	class Server {
 	public:
 		// ****** Constructors and Destructor **********
@@ -28,16 +29,16 @@ namespace http {
 		Server& operator= ( const Server& other );
 
 		// ************* Reading & Writing Operations **********
-		void				writePort(const int& port);
-		const int&			readPort( void );
-		void				writeIp(const std::string& listen);
-		const std::string&	readIp( void );
-		void				writeSockAddrLen(const unsigned int& port);
-		const unsigned int&	readSockAddrLen( void );
+		// void				writePort(const int& port);
+		// const int&			readPort( void );
+		// void				writeIp(const std::string& listen);
+		// const std::string&	readIp( void );
+		// void				writeSockAddrLen(const unsigned int& port);
+		// const unsigned int&	readSockAddrLen( void );
 		void				writeInSock(const int& fd);
 		const int&			readInSock( void );
-		void				writeOutSock(const int& fd);
-		const int&			readOutSock( void );
+		// void				writeOutSock(const int& fd);
+		// const int&			readOutSock( void );
 		void				writeName(const std::string& name);
 		const std::string&	readName( void );
 		void				writeRoot(const std::string& root);
@@ -48,20 +49,21 @@ namespace http {
 		const std::string&	readErrorPage( void );
 		void setCgi(const std::map<std::string, std::pair<std::string, std::string> >&str);
 		std::map<std::string, std::pair<std::string, std::string> >& getCgi();
-
+		std::vector<Listen>& getListen(void); 
 		// ***** Returning Reference Address of Member Objects *********
 		std::vector<Location>&	refLocations( void );
 		struct	sockaddr_in&	refSockaddrs( void );
 
 		// ****** The Rest  *******
-		void	bindServerSockAddr( void );
-		void	startListen( const int& max_queue );
+		//void	bindServerSockAddr( void );
+		//void	startListen( const int& max_queue );
 
-	private:		
-		int						_port;
-		std::string				_ip;
+	private:
+		std::vector<Listen>		listen_to;
+		// int						_port;
+		// std::string				_ip;
 		struct	sockaddr_in		_sockAddrs;
-		unsigned int			_sockAddrs_len;			// Stores the sizeof(_sockAddrs)
+		//unsigned int			_sockAddrs_len;			// Stores the sizeof(_sockAddrs)
 
 		int						_in_sock;				// for storing listening socket // I THINK THIS ENDED UP NOT BEING USED. WILL CHECK AGAIN TO KNOW IF NEED BE REMOVED
 

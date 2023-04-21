@@ -45,10 +45,13 @@ namespace http {
 		bool		parse_one_location(std::vector<Location>& locations, std::string& context);
 		void		parse_to_str(const std::string& str, const char *name, const std::string& context);
 		void		parse_to_vect(std::vector<std::string>& methods, const std::string& context);
-		void		setup_server_host(struct sockaddr_in& _sockAddrs, const unsigned int& sockAddrs_len,
-									const std::string& ip, const int& port);
+		//void		setup_server_host(struct sockaddr_in& _sockAddrs, const unsigned int& sockAddrs_len,
+		//							const std::string& ip, const int& port);
 		void 		parse_for_cgi(std::map<std::string, std::pair<std::string, std::string> > &cgi_map, std::string &context);
 		std::vector<std::string> split_string(std::string str);
+		void		parse_for_listen(std::vector<Listen> &listen_to, std::string context);
+		void 		check_ip(std::string ip);
+		void		check_port(int port);
 	};	
 
 }	// namespace ft

@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:54:06 by hrings            #+#    #+#             */
-/*   Updated: 2023/04/17 17:26:36 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/21 16:50:57 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@
 class Cgi
 {
 	public:
-		Cgi(std::string root);
+		Cgi(http::Server* server);
 		~Cgi();
 		ErrorCode getErrorCode();
 		//std::string &getBody();
@@ -35,14 +35,13 @@ class Cgi
 		Request				*_request;
 	private:
 		ErrorCode			error_code;
-		//std::string			body;
 		std::map<std::string, std::string> env_var;
 		char**	env;
 		char *argv[3];
 		std::string file_path;
 		std::string working_dir;
 		std::string execute_dir;
-		std::string server_root;
+		http::Server* server;
 		void methodCheck();
 		void initEnv();
 		void executeScript();

@@ -66,7 +66,8 @@ class Request
 		void setCgi_method(std::string str);
 		std::string	getCgi_method();
 		const std::map<std::string, std::string>&	readHeaders( void );
-		void set_max_body_size(size_t n);
+		void set_client_ip(std::string ip);
+		std::string read_ip_Addr();
 		bool has_request();
 		
 
@@ -93,6 +94,7 @@ class Request
 		std::string protocol;		//protocol of the request, HTTP 1.1 for us
 		std::string request_body;	// the body part of the request
 	public:
+	
 		std::map<std::string, std::string> headers;	//place to story everything of the header, like Host, Chunk sending and so on
 	private:
 		size_t	chunk_length; //length of the chunks
@@ -106,8 +108,9 @@ class Request
 		bool keep_alive;
 		std::string cgi_exe;
 		std::string cgi_method;
-		size_t max_body_size;
+		//size_t max_body_size;
 		bool request_started;
+		std::string client_ip_add;
 };
 
 #endif

@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/25 13:17:10 by hrings            #+#    #+#             */
-/*   Updated: 2023/04/17 21:16:25 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/21 17:06:46 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,4 +32,7 @@
 #define MAXURISIZE 10000
 #define SIZE_MAX_T (size_t)-1
 #define MAXVALUESIZE 8000
+#define DEFAULTPORT 8000
+#define DEFAULTIP "127.0.0.1"
+#define CGITMPFOLDER "/cgi-bin/tmp"
 #endif

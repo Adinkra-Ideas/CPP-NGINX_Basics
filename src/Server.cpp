@@ -1,31 +1,31 @@
 # include "../includes/Server.hpp"
 
 namespace http {
-	Server::Server( void ) : _port(), _ip(), _sockAddrs(), _sockAddrs_len(),
-								_in_sock(), _name(), _root(), _max_body(),
+	Server::Server( void ) : _in_sock(), _name(), _root(), _max_body(),
 								_error_page(), _locations(), cgi() {}
 
 	Server::~Server( void ) {}
 
-	Server::Server( const Server& other ) : _port(other._port), _ip(other._ip),
-						_sockAddrs(), _sockAddrs_len(), _in_sock(), _name(other._name),
+	Server::Server( const Server& other ) : listen_to(other.listen_to),
+						 _in_sock(), _name(other._name),
 						 _root(other._root), _max_body(other._max_body),
 						_error_page(other._error_page), _locations(other._locations),
 						cgi(other.cgi)
 	{
-		_sockAddrs.sin_family = other._sockAddrs.sin_family;
-		_sockAddrs.sin_port = other._sockAddrs.sin_port;
-		_sockAddrs.sin_addr.s_addr = other._sockAddrs.sin_addr.s_addr;
-		_sockAddrs_len = other._sockAddrs_len;
+		// _sockAddrs.sin_family = other._sockAddrs.sin_family;
+		// _sockAddrs.sin_port = other._sockAddrs.sin_port;
+		// _sockAddrs.sin_addr.s_addr = other._sockAddrs.sin_addr.s_addr;
+		// _sockAddrs_len = other._sockAddrs_len;
 	}
 
 	Server& Server::operator= ( const Server& other ) {
 		if (this != &other)
 		{
-			this->_port = other._port;
-			this->_ip = other._ip;
-			this->_sockAddrs = other._sockAddrs;
-			this->_sockAddrs_len = other._sockAddrs_len;
+			this->listen_to = other.listen_to;
+			// this->_port = other._port;
+			// this->_ip = other._ip;
+			// this->_sockAddrs = other._sockAddrs;
+			// this->_sockAddrs_len = other._sockAddrs_len;
 			this->_in_sock = other._in_sock;
 			this->_name = other._name;
 			this->_root = other._root;
@@ -40,14 +40,14 @@ namespace http {
 	// ****************	CONSTRUCTORS && OPERATORS ENDS	**********************
 	//////////////////////////////////////////////////////////////////////////
 	// ***********		READING AND WRITING METHODS BEGINS********************
-	void	Server::writePort(const int& port) { _port = port; }
-	const int&	Server::readPort( void ) { return _port; }
+	// void	Server::writePort(const int& port) { _port = port; }
+	// const int&	Server::readPort( void ) { return _port; }
 
-	void	Server::writeIp(const std::string& listen) { _ip = listen; }
-	const std::string&	Server::readIp( void ) { return _ip; }
+	// void	Server::writeIp(const std::string& listen) { _ip = listen; }
+	// const std::string&	Server::readIp( void ) { return _ip; }
 
-	void	Server::writeSockAddrLen(const unsigned int& len) { _sockAddrs_len = len; }
-	const unsigned int&	Server::readSockAddrLen( void ) { return _sockAddrs_len; }
+	// void	Server::writeSockAddrLen(const unsigned int& len) { _sockAddrs_len = len; }
+	// const unsigned int&	Server::readSockAddrLen( void ) { return _sockAddrs_len; }
 
 	void	Server::writeInSock(const int& fd) { _in_sock = fd; }
 	const int&	Server::readInSock( void ) { return _in_sock; }
@@ -67,6 +67,7 @@ namespace http {
 	void Server::setCgi(const std::map<std::string, std::pair<std::string, std::string> > &input) {this->cgi = input;}
 	std::map<std::string, std::pair<std::string, std::string> >& Server::getCgi() { return this->cgi;}
 	
+	std::vector<Listen>& Server::getListen(void) {return this->listen_to;}
 	// ***********		READING AND WRITING METHODS ENDS *********************
 	//////////////////////////////////////////////////////////////////////////
 	// **** 	Returning Reference Address of Member Objects Begins	******
@@ -83,49 +84,49 @@ namespace http {
 	// If successful, Bind() the _in_sock to _sockAddrs	*
 	// which already has the IP:HOST stored				*
 	// **************************************************
-	void	Server::bindServerSockAddr() {
-		std::ostringstream msg;
+	// void	Server::bindServerSockAddr() {
+	// 	std::ostringstream msg;
 
-		if ( (_in_sock = socket(AF_INET, SOCK_STREAM, 0) )  == -1 ) {
-			msg << "Cannot create socket for host " << _ip;
-			exit_with_error(msg.str());
-		}
-		if (bind(_in_sock, (struct sockaddr *)&_sockAddrs, _sockAddrs_len) == -1) {
-			msg << "bind went wrong for host " << _ip;
-			exit_with_error(msg.str());
-		}
-		int optval = 1;
-		socklen_t optlen = sizeof(optval);
-		if(setsockopt(_in_sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
-			msg << "setsockopt failed " << _ip;
-			exit_with_error(msg.str());
-   		}
+	// 	if ( (_in_sock = socket(AF_INET, SOCK_STREAM, 0) )  == -1 ) {
+	// 		msg << "Cannot create socket for host " << this->;
+	// 		exit_with_error(msg.str());
+	// 	}
+	// 	if (bind(_in_sock, (struct sockaddr *)&_sockAddrs, _sockAddrs_len) == -1) {
+	// 		msg << "bind went wrong for host " << _ip;
+	// 		exit_with_error(msg.str());
+	// 	}
+	// 	int optval = 1;
+	// 	socklen_t optlen = sizeof(optval);
+	// 	if(setsockopt(_in_sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
+	// 		msg << "setsockopt failed " << _ip;
+	// 		exit_with_error(msg.str());
+   	// 	}
 
-		msg << "Socket FD " << _in_sock
-			<< " bounded successfully with Socket Address "
-			<< inet_ntoa(_sockAddrs.sin_addr) << ":"
-			<< ntohs(_sockAddrs.sin_port);
-		print_status(ft_GREEN, msg.str());
-	}
+	// 	msg << "Socket FD " << _in_sock
+	// 		<< " bounded successfully with Socket Address "
+	// 		<< inet_ntoa(_sockAddrs.sin_addr) << ":"
+	// 		<< ntohs(_sockAddrs.sin_port);
+	// 	print_status(ft_GREEN, msg.str());
+	// }
 
 	// **************************************************
 	// Starts listen() for our socket address FD stored	*
 	// already in _in_sock								*
 	// **************************************************
-	void	Server::startListen( const int& max_queue) {
-		std::ostringstream msg;
+	// void	Server::startListen( const int& max_queue) {
+	// 	std::ostringstream msg;
 
-		if ( listen(_in_sock, max_queue) ) {
-			msg << "Socket listening on Sock FD " << _in_sock
-				<< " failed";
-			exit_with_error(msg.str());
-		}
+	// 	if ( listen(_in_sock, max_queue) ) {
+	// 		msg << "Socket listening on Sock FD " << _in_sock
+	// 			<< " failed";
+	// 		exit_with_error(msg.str());
+	// 	}
 
-		msg << "Socket Address " << inet_ntoa(_sockAddrs.sin_addr)
-			<< ":" << ntohs(_sockAddrs.sin_port) << " With FD "
-			<< _in_sock << " is Now Listening! (Max Queue == "
-			<< max_queue << ")" ;
-		print_status(ft_GREEN, msg.str());
-	}
+	// 	msg << "Socket Address " << inet_ntoa(_sockAddrs.sin_addr)
+	// 		<< ":" << ntohs(_sockAddrs.sin_port) << " With FD "
+	// 		<< _in_sock << " is Now Listening! (Max Queue == "
+	// 		<< max_queue << ")" ;
+	// 	print_status(ft_GREEN, msg.str());
+	// }
 
 }	// namespace ft

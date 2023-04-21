@@ -6,14 +6,15 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:56:47 by hrings            #+#    #+#             */
-/*   Updated: 2023/04/18 20:59:47 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/21 18:47:42 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Cgi.hpp"
 
-Cgi::Cgi(std::string root) : error_code(NONE), server_root(root)
+Cgi::Cgi(http::Server* server) : error_code(NONE)
 {
+	this->server = server;
 	char *cwd = getcwd(NULL, 0);
   	if (!cwd)
     {
@@ -70,7 +71,7 @@ void Cgi::initEnv()
     	return ;
   	std::string cwd_ = cwd;
   	free(cwd);
-	this->file_path = http::remove_extra_backslash(cwd_ + "/" + this->server_root + "/cgi-bin/" + _request->getCgi_exe());
+	this->file_path = http::remove_extra_backslash(cwd_ + "/" + this->server->readRoot() + "/cgi-bin/" + _request->getCgi_exe());
 	if (this->_request->readMethod() == GET)
 		this->env_var["REQUEST_METHOD"] = "GET";
 	if (this->_request->readMethod() == POST)
@@ -79,14 +80,14 @@ void Cgi::initEnv()
 		this->env_var["CONTENT_TYPE"] = this->_request->headers["content-type"];
 		this->env_var["REQUEST_METHOD"] = "POST";
 	}
-	this->env_var["SERVER_NAME"] = "127.0.0.1";
-	this->env_var["SERVER_PORT"] = "7655";
+	this->env_var["SERVER_NAME"] = this->server->getListen().front().ip;
+	this->env_var["SERVER_PORT"] = http::int_to_str(this->server->getListen().front().port);
 	this->env_var["GATEWAY_INTERFACE"] = "CGI/1.1";
 	this->env_var["SERVER_PROTOCOL"] = "HTTP/1.1";
-	this->env_var["HTTP_HOST"] = this->_request->headers["host"];
 	this->env_var["PATH_INFO"] = cwd_ + this->_request->readPath();
 	this->env_var["PATH_TRANSLATED"] = cwd_ + this->_request->readPath();
 	this->env_var["REQUEST_URI"] = this->_request->readPath();
+	this->env_var["REMOTE_ADDR"] = this->_request->read_ip_Addr();
 	this->env_var["SCRIPT_NAME"] = _request->getCgi_exe();
 	this->env_var["QUERY_STRING"] = this->_request->readQuery();
 	this->env_var["REQUEST_URI"] = cwd_ + this->_request->readPath();
@@ -136,7 +137,7 @@ void Cgi::runGetScript()
 	{
 		if (chdir(this->execute_dir.c_str()) == -1)
 			exit(INTERNALSERVERERROR);
-		std::string tmp_file(this->working_dir + "/cgi-bin/tmp");
+		std::string tmp_file(this->working_dir + CGITMPFOLDER);
 		int tmp_fd;
 		mode_t	mode;
 		mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
@@ -206,7 +207,7 @@ void Cgi::runPostScript()
 	if (pid== 0)
 	{
 
-		std::string tmp_file(this->working_dir + "/cgi-bin/tmp");
+		std::string tmp_file(this->working_dir + CGITMPFOLDER);
 		int tmp_fd;
 		mode_t	mode;
 		mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
@@ -254,7 +255,7 @@ void Cgi::runPostScript()
 			this->error_code = INTERNALSERVERERROR;
 			return ;
         }
-		std::string tmp_file(this->working_dir + "/cgi-bin/tmp");
+		std::string tmp_file(this->working_dir + CGITMPFOLDER);
 		std::ifstream		output;
 		std::ostringstream	buff_tmp;
 		output.open(tmp_file.c_str());

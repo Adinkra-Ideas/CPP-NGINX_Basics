@@ -43,6 +43,28 @@ enum ErrorCode
 
 namespace http {
 
+	struct Listen
+	{
+		std::string ip;
+		int port;
+		Listen() : ip(""), port(0) {};
+		Listen(std::string ip, int port) : ip(ip), port(port) {};
+		Listen &operator=(const Listen &assign)
+		{
+			if (this != &assign)
+			{
+				this->ip = assign.ip;
+				this->port = assign.port;
+			}
+			return (*this);
+		}
+	};
+
+	inline bool operator==(const Listen &lhs, const Listen &rhs)
+	{
+		return (!lhs.ip.compare(rhs.ip) && (lhs.port == rhs.port));
+	}
+
 	// **************** FUNCTIONS FOR PRINTING STATUS BEGINS ******************
 	void	exit_with_error(const std::string& msg);
 	void	print_status(const char *color, const std::string& msg);
@@ -51,6 +73,9 @@ namespace http {
 	std::string to_lower_case(std::string str);
 	std::string to_upper_case(std::string str);
 	size_t str_to_hex(std::string str);
+	int str_to_int(std::string str);
+	std::string int_to_str(int num);
+	std::string get_http_date();
 	std::string remove_extra_backslash(std::string str);
 	// **************** FUNCTIONS FOR PRINTING STATUS ENDS ********************
 	///////////////////////////////////////////////////////////////////////////

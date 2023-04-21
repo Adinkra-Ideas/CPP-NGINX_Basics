@@ -60,6 +60,42 @@ namespace http {
 
 		return result;
 	}
+
+	int str_to_int(std::string str)
+	{
+		const std::string base("0123456789");
+		size_t pos;
+		int result = 0;
+		if (str.empty())
+			exit_with_error("empty port str");
+		for (size_t i = 0; i < str.size(); ++i)
+		{
+			pos = base.find(str[i]);
+			if (pos == std::string::npos)
+				exit_with_error("none numerical port");
+			result = result * 10 + pos;
+		}
+		return result;
+	}
+
+	std::string int_to_str(int num)
+	{
+		std::stringstream ss;
+		ss << num;
+    	return ss.str();
+	}
+
+	std::string get_http_date() {
+		time_t rawtime;
+  		struct tm * timeinfo;
+  		char buffer [80];
+
+  		time(&rawtime);
+  		timeinfo = localtime(&rawtime);
+		int ret = strftime(buffer, 80, "%a, %d %b %Y %H:%M:%S %Z", timeinfo);
+		return std::string(buffer, ret);
+  	}
+
 	std::string remove_extra_backslash(std::string str)
 	{
 		std::string::iterator it = str.begin();

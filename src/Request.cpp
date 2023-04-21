@@ -34,8 +34,9 @@ Request::Request(const Request &copy) :
 	keep_alive(copy.keep_alive),
 	cgi_exe(copy.cgi_exe),
 	cgi_method(copy.cgi_method),
-	max_body_size(copy.max_body_size),
-	request_started(copy.request_started)
+	// max_body_size(copy.max_body_size),
+	request_started(copy.request_started),
+	client_ip_add(copy.client_ip_add)
 {
 }
 
@@ -71,8 +72,9 @@ Request & Request::operator=(const Request &assign)
 			this->keep_alive = assign.keep_alive;
 			this->cgi_exe = assign.cgi_exe;
 			this->cgi_method = assign.cgi_method;
-			this->max_body_size = assign.max_body_size;
+			// this->max_body_size = assign.max_body_size;
 			this->request_started = assign.request_started;
+			this->client_ip_add = assign.client_ip_add;
 		}
 		return *this;
 }
@@ -301,12 +303,6 @@ void Request::prepare_for_body()
 			this->parse_status = COMPLETED;
 			return ;
 		}
-		if(this->body_length > this->max_body_size)
-		{
-			this->error_code = CONTENTTOOLARGE;
-			this->parse_status = COMPLETED;
-			return ;
-		}
 		this->parse_status = BODY;
 	}
 	else
@@ -373,7 +369,7 @@ void Request::parse_chunks()
 			else if(this->buffer.length() >= this->chunk_length + 2)
 			{
 				this->body += this->buffer.substr(0, this->chunk_length);
-				if (this->body.length() > this->max_body_size)
+				if (this->body.length() > MAXBODYSIZE)
 				{
 					this->error_code = CONTENTTOOLARGE;
 					this->parse_status = COMPLETED;
@@ -382,7 +378,7 @@ void Request::parse_chunks()
 				this->buffer.erase(0, this->chunk_length + 2);
 				this->chunk_part = CHUNKSIZE;
 			}
-			else if ((this->buffer.length() + this->body.length()) > this->max_body_size)
+			else if ((this->buffer.length() + this->body.length()) > MAXBODYSIZE)
 			{
 				this->error_code = CONTENTTOOLARGE;
 				this->parse_status = COMPLETED;
@@ -465,9 +461,18 @@ bool Request::not_allowed_char_in_key(std::string value)
 	return false;	
 }
 
-void Request::set_max_body_size(size_t n)
+// void Request::set_max_body_size(size_t n)
+// {
+// 	this->max_body_size = n;
+// }
+
+void Request::set_client_ip(std::string ip)
 {
-	this->max_body_size = n;
+	this->client_ip_add = ip;
+}
+std::string Request::read_ip_Addr()
+{
+	return (this->client_ip_add);
 }
 
 bool Request::has_request()
