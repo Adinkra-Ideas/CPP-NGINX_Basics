@@ -437,7 +437,6 @@ bool Request::not_allowed_char_in_URL()
 
 bool Request::not_allowed_char_in_field(std::string value)
 {
-	//TODO check this for wrong char ....
 	for(std::string::iterator it = value.begin(); it != value.end(); ++it)
 	{
     if (!((*it >= ' ' && *it <= '?') || (*it >= 'A'&& *it <= '~')))
@@ -480,7 +479,6 @@ bool Request::has_request()
 	return this->request_started;
 }
 
-//TODO check if chunk trailers are fine
 void Request::trailing_chunk()
 {
 	size_t end = this->buffer.find(EOL);
