@@ -349,7 +349,6 @@ namespace http {
 						if ( (pos = post_query.find_first_not_of("\r\n", pos + tmp.size() + 1)) != std::string::npos )
 							_fout << post_query.substr(pos, post_query.find("\r\n", pos) - pos) << "\r\n";
 
-						// tmp.insert(0, 1, '/');
 						tmp.insert(0, (uploads_dir.size() > 0 ? uploads_dir.c_str() : "queryData/") );
 						std::ofstream 	_uploaded_file;
 						_uploaded_file.open(tmp.c_str(), std::ios::out | std::ios::trunc );

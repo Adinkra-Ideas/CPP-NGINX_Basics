@@ -84,7 +84,7 @@ namespace http {
 	// which already has the IP:HOST stored				*
 	// **************************************************
 	void	Server::bindServerSockAddr() {
-		std::ostringstream msg;
+		std::ostringstream	msg;
 
 		if ( (_in_sock = socket(AF_INET, SOCK_STREAM, 0) )  == -1 ) {
 			msg << "Cannot create socket for host " << _ip;
