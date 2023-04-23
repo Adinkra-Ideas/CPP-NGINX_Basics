@@ -6,7 +6,7 @@
 /*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:54:06 by hrings            #+#    #+#             */
-/*   Updated: 2023/04/21 16:50:57 by hrings           ###   ########.fr       */
+/*   Updated: 2023/04/23 21:19:10 by hrings           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,8 @@ class Cgi
 	
 		Request				*_request;
 	private:
+		Cgi();
+		Cgi &operator=(const Cgi &assign);
 		ErrorCode			error_code;
 		std::map<std::string, std::string> env_var;
 		char**	env;

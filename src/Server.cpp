@@ -40,15 +40,6 @@ namespace http {
 	// ****************	CONSTRUCTORS && OPERATORS ENDS	**********************
 	//////////////////////////////////////////////////////////////////////////
 	// ***********		READING AND WRITING METHODS BEGINS********************
-	// void	Server::writePort(const int& port) { _port = port; }
-	// const int&	Server::readPort( void ) { return _port; }
-
-	// void	Server::writeIp(const std::string& listen) { _ip = listen; }
-	// const std::string&	Server::readIp( void ) { return _ip; }
-
-	// void	Server::writeSockAddrLen(const unsigned int& len) { _sockAddrs_len = len; }
-	// const unsigned int&	Server::readSockAddrLen( void ) { return _sockAddrs_len; }
-
 	void	Server::writeInSock(const int& fd) { _in_sock = fd; }
 	const int&	Server::readInSock( void ) { return _in_sock; }
 
@@ -74,59 +65,5 @@ namespace http {
 	std::vector<Location>& Server::refLocations( void ) { return _locations; }
 
 	struct	sockaddr_in& Server::refSockaddrs( void ) { return _sockAddrs; }
-
-	// **** 	Returning Reference Address of Member Objects Ends	******
-	//////////////////////////////////////////////////////////////////////
-	// ***********		Initializing the Server Begins 		**************
-
-	// **************************************************
-	// Creates a socket and store the FD to _in_sock	*
-	// If successful, Bind() the _in_sock to _sockAddrs	*
-	// which already has the IP:HOST stored				*
-	// **************************************************
-	// void	Server::bindServerSockAddr() {
-	// 	std::ostringstream msg;
-
-	// 	if ( (_in_sock = socket(AF_INET, SOCK_STREAM, 0) )  == -1 ) {
-	// 		msg << "Cannot create socket for host " << this->;
-	// 		exit_with_error(msg.str());
-	// 	}
-	// 	if (bind(_in_sock, (struct sockaddr *)&_sockAddrs, _sockAddrs_len) == -1) {
-	// 		msg << "bind went wrong for host " << _ip;
-	// 		exit_with_error(msg.str());
-	// 	}
-	// 	int optval = 1;
-	// 	socklen_t optlen = sizeof(optval);
-	// 	if(setsockopt(_in_sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
-	// 		msg << "setsockopt failed " << _ip;
-	// 		exit_with_error(msg.str());
-   	// 	}
-
-	// 	msg << "Socket FD " << _in_sock
-	// 		<< " bounded successfully with Socket Address "
-	// 		<< inet_ntoa(_sockAddrs.sin_addr) << ":"
-	// 		<< ntohs(_sockAddrs.sin_port);
-	// 	print_status(ft_GREEN, msg.str());
-	// }
-
-	// **************************************************
-	// Starts listen() for our socket address FD stored	*
-	// already in _in_sock								*
-	// **************************************************
-	// void	Server::startListen( const int& max_queue) {
-	// 	std::ostringstream msg;
-
-	// 	if ( listen(_in_sock, max_queue) ) {
-	// 		msg << "Socket listening on Sock FD " << _in_sock
-	// 			<< " failed";
-	// 		exit_with_error(msg.str());
-	// 	}
-
-	// 	msg << "Socket Address " << inet_ntoa(_sockAddrs.sin_addr)
-	// 		<< ":" << ntohs(_sockAddrs.sin_port) << " With FD "
-	// 		<< _in_sock << " is Now Listening! (Max Queue == "
-	// 		<< max_queue << ")" ;
-	// 	print_status(ft_GREEN, msg.str());
-	// }
 
 }	// namespace ft

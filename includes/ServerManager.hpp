@@ -39,7 +39,7 @@ namespace http {
 		void	acceptConnection(int fd);
 		void	readRequest(int fd, Client &client);
 		void	sendResponce(int fd, Client &client);
-		Server&   assign_server_for_response(Client &client);
+		Server&	assign_server_for_response(Client &client);
 
 	private:
 		std::vector<http::Server>		_servers;			// Each element in this _servers vector holds a server config

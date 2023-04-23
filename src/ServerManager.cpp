@@ -140,7 +140,7 @@ namespace http {
 				// If a socket FD received an incoming request, then the Server config object
 				// mapped to the socket FD is passed to acceptConnection()
 				// check if coonection ...
-				if( FD_ISSET(i, &_received_fds_tmp) && this->_running_servers.count(i) )	// == 1	// Candidate line if We need to implement a consideration for server_name context
+				if( FD_ISSET(i, &_received_fds_tmp) && this->_running_servers.count(i) )
 					acceptConnection(i);
 
 				// Checking if acceptConnection() has already accepted this FD successfully
@@ -152,10 +152,7 @@ namespace http {
 				
 				// We're here. But first, we need to complete understanding what's going on in readRequest(). the request and response objects
 				else if (FD_ISSET(i, &_write_fds_tmp) && this->connected_clients.count(i))
-				{
 					sendResponce(i, this->connected_clients[i]);
-				}
-				// else if (FD_ISSET(i, &_except_fds) // This is for managing exception if necessary
 			}
 			checkTimeout();
 			// usleep(500);
@@ -332,7 +329,7 @@ namespace http {
 		}
 	}
 
-	Server&    ServerManager::assign_server_for_response(Client &client) // I thought the processing server has previously being assigned to this client.server() at the point of declaration in acceptConnection()?
+	Server&    ServerManager::assign_server_for_response(Client &client)
 	{
 		std::vector<Server*> possible_servers;
 		for (std::vector<http::Server>::iterator iter = this->_servers.begin(); iter != this->_servers.end(); ++iter)
