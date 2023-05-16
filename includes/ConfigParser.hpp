@@ -9,7 +9,7 @@
 # define MIN_HOST_LEN 7
 
 // for converting z.B. 1 KBi = 1024 Bytes
-# define INTtoKBi 1024
+# define INTtoMBi (1024*1024)
 
 # include <iostream>
 # include <vector>
@@ -47,7 +47,6 @@ namespace http {
 		void		parse_to_vect(std::vector<std::string>& methods, const std::string& context);
 		void		setup_server_host(struct sockaddr_in& _sockAddrs, const unsigned int& sockAddrs_len,
 									const std::string& ip, const int& port);
-		void		max_body_to_int(const std::size_t& max_body, std::string& max_body_tmp);
 		void 		parse_for_cgi(std::map<std::string, std::pair<std::string, std::string> > &cgi_map, std::string &context);
 		std::vector<std::string> split_string(std::string str);
 	};	

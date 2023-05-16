@@ -96,22 +96,14 @@ namespace http {
 		parse_to_str(serv.readErrorPage(), "\nerror_page", context);
 		parse_to_str(max_body_tmp, "\nclient_max_body_size", context);
 		parse_for_cgi(serv.getCgi(), context);
-		max_body_to_int(serv.readMaxBody(), max_body_tmp);
+
 		setup_server_host(serv.refSockaddrs(), serv.readSockAddrLen(), serv.readIp(), serv.readPort());
 
+		serv.writeMaxBody( ((std::atol(max_body_tmp.c_str()) > 0) ? std::atol(max_body_tmp.c_str()) : 0) );
 		servers.push_back(serv);
 		print_status(ft_GREEN, "Server Context Parsed Successfully!");
 
 		return true;
-	}
-
-	// Simply converts the string max_body_tmp to a usable integer stored in _max_body
-	void	ConfigParser::max_body_to_int(const std::size_t& _max_body, std::string& max_body_tmp) {
-		std::size_t&		max_body = const_cast<std::size_t&>(_max_body);
-
-		max_body = (std::atol(max_body_tmp.c_str()) > 0) ? std::atol(max_body_tmp.c_str()) : 0;
-		if (max_body)
-			max_body *= INTtoKBi;
 	}
 
 	// **********************************************************************
@@ -129,7 +121,7 @@ namespace http {
 
 		if ( (pos = _ip.find(":")) != std::string::npos ) {
 			if ( _ip.find_first_not_of("0123456789", ++pos) == std::string::npos ) {
-				if ( (_port = std::atoi(_ip.substr(pos, std::strlen(_ip.data() + pos)).data())) > 0
+				if ( (_port = std::atoi(_ip.substr(pos, std::strlen(_ip.data() + pos)).data())) >= 0
 						&& _port <= MAX_16_BIT ) {
 					_ip.erase(--pos);
 					if ( _ip.size() >= MIN_HOST_LEN ) {
@@ -163,6 +155,7 @@ namespace http {
 		Location		loc;
 		std::size_t		pos = 0;
 		std::size_t		count = std::strlen("location");
+		std::string		max_body_tmp;
 
 		if ( (pos = context.find("location")) != std::string::npos && (context[pos - 1] == '\n') ) {
 			if ( (count = context.find_first_not_of("\t ", pos + count)) != std::string::npos ) {
@@ -182,7 +175,9 @@ namespace http {
 					parse_to_str(loc.readExec(), "\nexec", _context);
 					parse_to_str(loc.readRewrite(), "\nrewrite", _context);
 					parse_to_str(loc.readUploads(), "\nuploads", _context);
+					parse_to_str(max_body_tmp, "\nclient_max_body_size", _context);
 
+					loc.writeMaxBody( ((std::atol(max_body_tmp.c_str()) > 0) ? std::atol(max_body_tmp.c_str()) : 0) );
 					locations.push_back(loc);
 					context.erase(pos, temp_end - (pos - 1));
 
@@ -249,18 +244,25 @@ namespace http {
 			}	
 		}
 		else if ( 	! std::strcmp("listen", name + 1) ||
-					! std::strcmp("root", name + 1) 			// || ! std::strcmp("error_page", name + 1) || ! std::strcmp("index", name + 1)
-					) { 										// for mandatory directives
+					! std::strcmp("root", name + 1) ) { 			// for mandatory directives
 			msg << "A Mandatory Simple Directive (" << name + 1
 				<< ") is missing!";
 			exit_with_error(msg.str());
 		}
+	
+		// Add missing ending slash to these Directives if not yet present
+		if ( ! std::strcmp("error_page", name + 1) ||
+			 ! std::strcmp("uploads", name + 1) ||
+			 ! std::strcmp("roots", name + 1) ) {
+				 if ( (pos = _str.size()) && _str.at(pos - 1) != '/' )
+				 	_str.push_back('/');
+			 }
 	}
 
 	// ********************************************************************************
 	// Calculates the number of hops from context[0] to position where closing '}'	  *
-	//  is found. It is guaranteed that context always has '{' before this function	  *
-	//  is called. Return value is number of hops. But if no matching closing '}'	  *
+	// is found. It is guaranteed that context always has '{' before this function	  *
+	// is called. Return value is number of hops. But if no matching closing '}'	  *
 	// is found, it returns 0														  *
 	// ********************************************************************************
 	std::size_t	ConfigParser::calculate_closing_brace_pos(const std::string& context) {
@@ -289,6 +291,7 @@ namespace http {
 		if ( (pos = line.find("#")) != std::string::npos )
 			line.erase( line.begin() + pos, line.end() );
 	}
+
 	void ConfigParser::parse_for_cgi(std::map<std::string, std::pair<std::string, std::string> > &cgi_map, std::string &context)
 	{
 		size_t pos = context.find("\ncgi");
@@ -303,8 +306,6 @@ namespace http {
 			{
 				exit_with_error("Wrong format on cgi, need: extension, Method, exe name");
 			}
-			// for (std::vector<std::string>::iterator it = tmp.begin(); it != tmp.end(); ++it)
-			// 	std::cout << "in tmp:" << *it << std::endl;
 			if (cgi_map.find(tmp[0])!= cgi_map.end())
 				exit_with_error("Redeclaration of an extension for cgi");
 			cgi_map[tmp[0]] = std::make_pair(tmp[1], tmp[2]);

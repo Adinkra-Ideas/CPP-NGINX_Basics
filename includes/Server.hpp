@@ -19,6 +19,8 @@ namespace http {
 
 	class Server {
 	public:
+		typedef std::map<std::string, std::pair<std::string, std::string> > cgi_map_object;
+
 		// ****** Constructors and Destructor **********
 		Server( void );
 		~Server( void );
@@ -46,8 +48,8 @@ namespace http {
 		const std::size_t&	readMaxBody( void );
 		void				writeErrorPage(const std::string& error_page);
 		const std::string&	readErrorPage( void );
-		void setCgi(const std::map<std::string, std::pair<std::string, std::string> >&str);
-		std::map<std::string, std::pair<std::string, std::string> >& getCgi();
+		void 				setCgi(const cgi_map_object&str);
+		cgi_map_object& 	getCgi();
 
 		// ***** Returning Reference Address of Member Objects *********
 		std::vector<Location>&	refLocations( void );
@@ -63,15 +65,14 @@ namespace http {
 		struct	sockaddr_in		_sockAddrs;
 		unsigned int			_sockAddrs_len;			// Stores the sizeof(_sockAddrs)
 
-		int						_in_sock;				// for storing listening socket
+		int						_in_sock;				// for storing listening socket // I THINK THIS ENDED UP NOT BEING USED. WILL CHECK AGAIN TO KNOW IF NEED BE REMOVED
 
 		std::string				_name;					// (OPTIONAL)	Set the server_names or not
 		std::string				_root;					// (MANDATORY)	Define a directory or a file from where the returned file should be searched
 		std::size_t				_max_body;				// (OPTIONAL)	Limit client body size
 		std::string				_error_page;			// (MANDATORY)	Setup default directory where error pages will be fetched from. 
 		std::vector<Location>	_locations;				// (OPTIONAL)	For setting multiple single-level-deep locations for this Server instance (if present in config file)
-		std::map<std::string, std::pair<std::string, std::string> >	cgi; //(OPTIONAL) list of extension with what method they allowed and the name of the exe
-	
+		cgi_map_object			cgi; //(OPTIONAL) list of extension with what method they allowed and the name of the exe
 	};
 
 }	// namespace ft

@@ -3,13 +3,18 @@
 namespace http {
 
 	// Constructors
-	Response::Response( void )
+	Response::Response( void ) : _request(NULL), _server(NULL),
+			_loc_file_path(), _web_page(), _response_content(),
+			_location(), _root_directory(), byte_send(0)
 	{
 	}
 
-	Response::Response(const Response &copy)
+	Response::Response( const Response &other ) : _request(other._request), 
+			_server(other._server), _loc_file_path(other._loc_file_path),
+			_web_page(other._web_page), _response_content(other._response_content),
+			_location(other._location), _root_directory(other._root_directory),
+			byte_send(other.byte_send)
 	{
-		(void) copy;
 	}
 
 	// Destructor
@@ -18,9 +23,18 @@ namespace http {
 	}
 
 	// Operators
-	Response & Response::operator=(const Response &assign)
+	Response & Response::operator=( const Response &other )
 	{
-		(void) assign;
+		if ( this != &other ) {
+			_request = other._request; 
+			_server = other._server;
+			_loc_file_path = other._loc_file_path;
+			_web_page = other._web_page;
+			_response_content = other._response_content;
+			_location = other._location;
+			_root_directory = other._root_directory;
+			byte_send = other.byte_send;
+		}
 		return *this;
 	}
 
@@ -29,7 +43,7 @@ namespace http {
 	// ******************* READING AND WRITING BEGINS	**********************
 	void Response::setRequest(Request &request)
 	{
-		_request = request;
+		_request = &request;
 	}
 
 	void Response::setServer(http::Server &server)
@@ -53,57 +67,69 @@ namespace http {
 		std::ostringstream	tmp;
 		ErrorCode			status = NONE;
 
+		// std::cout << "\n\n\nCaptured Body\n" << _request->getRequestBody() << std::endl;
+
 		// parseUrl( _request.readPath() );	// for removing the %%%% and other unformated chars from URL
-		//std::cout << "error: " << _request.readStatusCode() << std::endl;
-		if ( _request.readStatusCode() == NONE )
+		//std::cout << "servername: " << _request.serverName << std::endl;
+		if ( _request->readStatusCode() == NONE )
 		{
-			if (isCgiFile(this->_request.readPath()) && _request.readMethod() != DELETE)
+			//
+			if (isCgiFile(this->_request->readPath()))
 			{
-				Cgi cgi_request(this->_request);
+				Cgi cgi_request(this->_server->readRoot());
+				cgi_request.set_request(this->_request);
+				cgi_request.run_cgi();
 				cgi_request.parse_body_for_headers();
 				status = cgi_request.getErrorCode();
-				this->_web_page = cgi_request.getBody();
+				this->_web_page = cgi_request._request->getRequestBody();
+				std::string("").swap(cgi_request._request->getRequestBody());
 			}
-			else if ( _request.readMethod() == GET )
+			else if ( _request->readMethod() == GET )
 					status = doGetPost("GET");
-			else if ( _request.readMethod() == POST )
+			else if ( _request->readMethod() == POST )
 				status = doGetPost("POST");
-			else if ( _request.readMethod() == HEAD )	// Same as GET except it doesn't return a Body;
+			else if ( _request->readMethod() == HEAD )	// Same as GET except it doesn't return a Body;
 				status = doGetPost("HEAD");
-			else if ( _request.readMethod() == PUT )	// Same as POST except it doesn't return a Body;
+			else if ( _request->readMethod() == PUT )	// Same as POST except it doesn't return a Body;
 				status = doGetPost("PUT");
-			else if ( _request.readMethod() == DELETE )
+			else if ( _request->readMethod() == DELETE )
 				status = doDelete();
 			else
 				status = METHODNOTALLOWED;
 		}
-		else if ( _request.readStatusCode() != NONE )
-			status = _request.readStatusCode();	// we retrieve status code set from httprequest
+		else if ( _request->readStatusCode() != NONE )
+			status = _request->readStatusCode();	// we retrieve status code set from httprequest
 
 		if ( status != OK && status != MOVEDPERMANENTLY && status != FOUND )
 			buildErrorCodePage(_web_page, status);
 
 		// Add httpResponse status line to stream z.B [HTTP/1.1 200 OK]
 		// Add content-type to stream z.B [Content-Type: text/html]
-		tmp << _request.readProtocol() << " "
+		tmp << _request->readProtocol() << " "
 			<< status << " "
-			<< ft::translateErrorCode(status) << "\n"
-			<< "Content-Type: " << getContentType(_loc_file_path, status) << " \n"
-			<< "Content-Length: " << _web_page.size() << " \n"
+			<< ft::translateErrorCode(status) << EOL
+			<< "Content-Type: " << getContentType(_loc_file_path, status) << EOL
+			<< "Content-Length: " << _web_page.size() << EOL
 			<< "Location: " << _location
 			<< "\n\n"
-			<< (( _request.readMethod() != HEAD && _request.readMethod() != PUT ) ? _web_page.c_str() : "");
-
+			<< (( _request->readMethod() != HEAD && _request->readMethod() != PUT ) ? _web_page : "");
 		// clear() _response_content before assigning it the new response
-		_response_content.clear();
+		std::string("").swap(_response_content);
 		_response_content = tmp.str();
-		//std::cout << "server response : \n" << _response_content << std::endl;
 		// clear() all other data 
-		_request.clear();
-		_loc_file_path.clear();
-		_web_page.clear();
-		_location.clear();
-		_root_directory.clear();
+		_request->clear();
+		std::string("").swap(_loc_file_path);
+		std::string("").swap(_web_page);
+		std::string("").swap(_location);
+		std::string("").swap(_root_directory);
+	}
+	void Response::set_bytesend(int n)
+	{
+		this->byte_send = n;
+	}
+	int Response::get_bytesend(void)
+	{
+		return this->byte_send;
 	}
 
 	// ******************************************************
@@ -112,11 +138,11 @@ namespace http {
 	// ******************************************************
 	ErrorCode	Response::doDelete( void ) {
 		std::string			delete_me;			// stores the website URL path requested by client z.B "/directory/index.html"
-		std::string			delete_me_dir;		// directory copied from delete_me z.B. "/directory"
-		std::string			delete_me_fname;	// filename copied from delete_me z.B. "/index.html"
+		std::string			delete_me_dir;		// directory copied from delete_me z.B. "/directory/"
+		std::string			delete_me_fname;	// filename copied from delete_me z.B. "index.html"
 		ErrorCode			status = NONE;
 
-		delete_me = _request.readPath();
+		delete_me = _request->readPath();
 		if ( (status = extractDirFromWebUrl(delete_me_dir, delete_me_fname, delete_me)) != NONE )
 			return status;
 
@@ -131,7 +157,7 @@ namespace http {
 			std::remove(_loc_file_path.c_str());
 
 		// After deleting resource, Redirect client back to referrer or home
-		_location = _request.readHeaders().count("referer") > 0 ? _request.readHeaders().find("referer")->second : "/";
+		_location = _request->readHeaders().count("referer") > 0 ? _request->readHeaders().find("referer")->second : "/";
 
 		return OK;
 	}
@@ -146,51 +172,53 @@ namespace http {
 	// ******************************************************************************
 	ErrorCode	Response::doGetPost( const char *method ) {
 		std::string		web_url;			// stores the website URL path requested by client z.B "/directory/index.html"
-		std::string		web_url_dir;		// directory copied from web_url z.B. "/directory"
-		std::string		web_url_fname;		// filename copied from web_url z.B. "/index.html"
+		std::string		web_url_dir;		// directory copied from web_url z.B. "/directory/"
+		std::string		web_url_fname;		// filename copied from web_url z.B. "index.html"
 		ErrorCode		status = NONE;	
 
 		// copy directory part of web_url to web_url_dir
 		// and filename part of web_url to web_url_fname
-		web_url = _request.readPath();
+		web_url = _request->readPath();
 		if ( (status = extractDirFromWebUrl(web_url_dir, web_url_fname, web_url)) != NONE )
 			return status;
 
 		// set iterator it to location context of config that will route this request
 		std::vector<http::Location>::iterator	it = _server->refLocations().begin();
-		// std::cout << "web_url: " << web_url << "$" << std::endl;
-		// std::cout << "web_url_fname: " << web_url_fname << "$" <<std::endl;
-		// std::cout << "web_url_dir: " << web_url_dir << "$" <<std::endl;
-		// std::cout << "_loc_file_path: " << _loc_file_path << "$" <<std::endl;
-		// std::cout << "_root_directory: " << _root_directory << "$" <<std::endl;
 		if ( (status = setIteratorToLocationContext(it, web_url_dir, web_url_fname, method)) != NONE ) // we need to send you file_name
 			return status;
+
+		// Check If Location context has max_body value set. If yes, compare accordingly
+		if ( it->readMaxBody() && it->readMaxBody() < _request->getRequestBody().size() )
+			return CONTENTTOOLARGE;
 
 		// Saving data/body received from requests, if any
 		std::ofstream 		_fout;
 		std::ostringstream	buff_tmp;
 		buff_tmp << (it->readUploads().size() > 0 ? it->readUploads() : "queryData") << "/"
-			<< ( _request.getRequestBody().size() > 0 ? "postQery" : _request.readQuery().size() > 0 ? "getQery" : "");
+			<< ( _request->getRequestBody().size() > 0 ? "postQery" : _request->readQuery().size() > 0 ? "getQery" : "tmp");
 		_fout.open(buff_tmp.str().c_str(), std::ios::out | std::ios::app );
 		if (! _fout.good() )
 			print_status(ft_RED, "Skipping GET/POST/PUT Query Backup Because Uploads Path Not Created");
 		else {
-			if ( _request.getRequestBody().size() > 0 )				// it's a post or put request
-				collatePostQuery(_request.getRequestBody(), _fout, it->readUploads());
-			else if ( _request.readQuery().size() > 0 )				// it's a get request that has query parameters			
-				_fout << _request.readQuery() << std::endl;
+			if ( strcmp(method, "POST") == 0 || strcmp(method, "PUT") == 0 )				// it's a post or put request
+				collatePostQuery(_request->getRequestBody(), _fout, it->readUploads());
+			else if ( _request->readQuery().size() > 0 )				// it's a get request that has query parameters			
+				_fout << _request->readQuery() << std::endl;
 			_fout.close();
 		}
 
 		// check if any redirection is present
-		// if ( _request.readMethod() != HEAD )
-		if ( (status = checkForRedirections(_loc_file_path, web_url, it)) != NONE )
-			return status;
+		if ( strcmp(method, "GET") == 0 || strcmp(method, "HEAD") == 0 )
+		{
+			if ( (status = checkForRedirections(_loc_file_path, web_url, it)) != NONE )
+				return status;
+		}
 
 
 		// Open an input file stream, write to stream from _loc_file_path,
 		// if write failed, return error404, else read from stream to 
 		// _web_page and return status 200
+		if (this->_request->readMethod() == GET || this->_request->readMethod() == HEAD)
 		{
 			std::ifstream		fin;
 			fin.open(_loc_file_path.c_str());
@@ -199,8 +227,7 @@ namespace http {
 			std::stringstream buff_tmp;
 			buff_tmp << fin.rdbuf();
 			fin.close();
-			// It is at this point that PHP or other backend scripters are exec'd on the file
-			_web_page.append(buff_tmp.str().c_str());
+			_web_page.append(buff_tmp.str().c_str(), buff_tmp.str().length());
 		}
 		return OK;
 	}
@@ -226,20 +253,16 @@ namespace http {
 		if ( request_path.size() <= 0 || (request_path.size() > 0 && request_path.at(0) != '/') )
 			return BADREQUEST;
 
-		pos = request_path.size();
-		if ( pos > 2 && request_path.at(pos - 1) == '/' )	// >2 meaning at least std::strlen("/x/")
-			request_path.erase(pos - 1, 1);	// we want to search Location context using z.B '/web_url_path' not '/web_url_path/'
-		
 		// copy only directory part from request_path to request_dir
 		// then copy only filename part from request_path to request_fname
 		request_dir = request_path;
-		if ( (pos = request_dir.find('.')) != std::string::npos ) {
+		if ( (pos = request_dir.rfind('.')) != std::string::npos ) {
 			if ( (pos = request_dir.rfind('/', pos)) != std::string::npos )
-				request_dir = request_dir.substr(0, pos);
+				request_dir = request_dir.substr(0, pos + 1);
 			if ( pos == std::string::npos || request_path.at(request_dir.size() + 1) == '.' )	// we dont want "www.google.com/."
 				return BADREQUEST;
 
-			request_fname = request_path.substr(pos);
+			request_fname = request_path.substr(pos + 1);
 			if ( (pos = request_fname.find_last_of('.')) != std::string::npos )
 				if ( ! types::parseMime( request_fname.substr(pos) ).compare("default") )		// has bad extension
 					return BADREQUEST;
@@ -260,64 +283,42 @@ namespace http {
 	// our path must support.										*
 	// **************************************************************
 	ErrorCode	Response::setIteratorToLocationContext( std::vector<http::Location>::iterator& it,
-										std::string& path, std::string& fname, const char *method ) {
-		std::string		*ptr = &path;
-		std::string tmp_loc;
-		size_t max_hit_length = 0;
-		std::vector<http::Location>::iterator tmp_iter;
-		if ((*ptr).empty())
-			(*ptr) = "/";
-		while ( it != _server->refLocations().end() ) 
-		{
-			if ((std::find(it->refMethods().begin(), it->refMethods().end(), method) != it->refMethods().end()) &&
-				(*ptr).find(it->readPath()) == 0)
-				{
-					if (max_hit_length < it->readPath().size())
-					{
-						max_hit_length = it->readPath().size();
-						tmp_iter = it;
-						tmp_loc = it->readPath();
-						_root_directory = it->readRoot();
-					}
-				}
-			it++;
-		}
-		if (max_hit_length == 0)
-			return METHODNOTALLOWED;
-		else
-		{
-			_loc_file_path = _root_directory + path.substr(tmp_loc.size()) + fname;
-			it = tmp_iter;
-			return NONE;
-		}
-		// std::string		dir_sign = "/";
-		// bool			flag = false;
+									const std::string& path, std::string& fname, const char *method ) {
+		std::string		search_key = path;
+		std::string		reserved;			// used for storing the temp chopped-off directory while loop is running
+		bool			flag = false;
+		std::size_t		pos;
 
-		// while ( it != _server->refLocations().end() ) {
-		// 	if ( ! it->readPath().compare(*ptr) && (std::find(it->refMethods().begin(),
-		// 				it->refMethods().end(), method) != it->refMethods().end()) ) {
-		// 		_loc_file_path = it->readRoot();
-		// 		_root_directory = it->readRoot();
-		// 		std::cout << "found: " << it->readRoot() << "on " << *ptr << std::endl;
-		// 		if ( flag )		// meaning we wanted a Location "/path" but ended up settling for Location "/". Therefore, '/path' needs to be appended to the path that '/' is rooted to
-		// 			_loc_file_path.append(path);
-		// 		_loc_file_path.append(fname);
-		// 		break ;
-		// 	}
-		// 	++it;
-		// 	if ( it == _server->refLocations().end() && !flag ) {
-		// 		flag = true;
-		// 		it = _server->refLocations().begin();
-		// 		ptr = &dir_sign;
-		// 	}
-		// }
-		// if ( it == _server->refLocations().end() )
-		// 	return METHODNOTALLOWED;
-		// return NONE;
+		pos = search_key.size();
+		if ( pos && search_key.at(pos - 1) != '/' )
+			search_key.push_back('/');
+
+		while ( it != _server->refLocations().end() ) {
+			if ( ! it->readPath().compare(search_key) && (std::find(it->refMethods().begin(),
+						it->refMethods().end(), method) != it->refMethods().end()) ) {
+				_loc_file_path = it->readRoot();
+				_root_directory = it->readRoot();
+				_loc_file_path.append(reserved);
+				_loc_file_path.append(fname);
+				flag = true;
+				break ;
+			}
+			++it;
+			if ( it == _server->refLocations().end() && search_key.size() > 1 ) { // ">1" explanation: if search_key.size() == 1 at this point, it means search_key has used its final chance which is '/' but still failed to find a supported location context
+				if ( (pos = search_key.rfind('/', search_key.size() - 2)) != std::string::npos ) {
+					reserved.insert( 0, search_key.substr(pos + 1) );
+					search_key.erase(pos + 1);
+					it = _server->refLocations().begin();
+				}
+			}
+		}
+		if ( flag == false  )
+			return METHODNOTALLOWED;
+		return NONE;
 	}
 
 	// **************************************************************************
-	// collate query parameters of POST requests and store uploaded files.		*
+	// Collate query parameters of POST requests and store uploaded files.		*
 	// post_query param is a string that holds the content of POST body.		*
 	// _fout param is an outstream already connected to the file where we're	*
 	// storing the post queries.												*
@@ -332,38 +333,51 @@ namespace http {
 
 		// WebKitFormXXX might be peculiar to only POST queries
 		// sent from a Chrome Browser
-		while ( (pos = post_query.find("form-data;", pos)) != std::string::npos ) {
-			if ( (pos = post_query.find("name=", pos)) != std::string::npos ) {
-				pos += std::strlen("name=\"");
-				_fout << post_query.substr(pos, post_query.find('"', pos) - pos)
-						<< "=";
-				pos = post_query.find('"', pos) + 1;
-
-				// check if a file was uploaded
-				if ( !post_query.compare(pos, 11 ,"; filename=") ) {	// 11 == std::strlen("; filename=")
+		if (this->_request->headers.count("content-type") && this->_request->headers["content-type"].find("multipart/form-data") != std::string::npos)
+		{
+			while ( (pos = post_query.find("form-data;", pos)) != std::string::npos ) {
+				if ( (pos = post_query.find("name=", pos)) != std::string::npos ) {
+					pos += std::strlen("name=\"");
+					_fout << post_query.substr(pos, post_query.find('"', pos) - pos)
+							<< "=";
 					pos = post_query.find('"', pos) + 1;
-					tmp = post_query.substr(pos, post_query.find('"', pos) - pos);
-					if ( (pos = post_query.find_first_not_of("\r\n", pos + tmp.size() + 1)) != std::string::npos )
-						_fout << post_query.substr(pos, post_query.find("\r\n", pos) - pos) << "\r\n";
 
-					tmp.insert(0, 1, '/');
-					tmp.insert(0, (uploads_dir.size() > 0 ? uploads_dir.c_str() : "queryData") );
-					std::ofstream 	_uploaded_file;
-					_uploaded_file.open(tmp.c_str(), std::ios::out | std::ios::trunc );
-					if ( _uploaded_file.good() ) {
-						if ( (pos = post_query.find("\r\n\r\n", pos)) != std::string::npos ) {
-							pos += std::strlen("\r\n\r\n");
-							_uploaded_file << post_query.substr(pos, post_query.find("\r\n------WebKitForm", pos) - pos);
+					// check if a file was uploaded
+					if ( !post_query.compare(pos, 11 ,"; filename=") ) {	// 11 == std::strlen("; filename=")
+						pos = post_query.find('"', pos) + 1;
+						tmp = post_query.substr(pos, post_query.find('"', pos) - pos);
+						if ( (pos = post_query.find_first_not_of("\r\n", pos + tmp.size() + 1)) != std::string::npos )
+							_fout << post_query.substr(pos, post_query.find("\r\n", pos) - pos) << "\r\n";
+
+						tmp.insert(0, (uploads_dir.size() > 0 ? uploads_dir.c_str() : "queryData/") );
+						std::ofstream 	_uploaded_file;
+						_uploaded_file.open(tmp.c_str(), std::ios::out | std::ios::trunc );
+						if ( _uploaded_file.good() ) {
+							if ( (pos = post_query.find("\r\n\r\n", pos)) != std::string::npos ) {
+								pos += std::strlen("\r\n\r\n");
+								_uploaded_file << post_query.substr(pos, post_query.find("\r\n------WebKitForm", pos) - pos);
+							}
+							_uploaded_file.close();
 						}
-						_uploaded_file.close();
+					}
+				//else check if the key has a value
+					else if ( ! post_query.compare(pos, 4,"\r\n\r\n") ) {
+						pos += std::strlen("\r\n\r\n");
+						_fout << post_query.substr(pos, post_query.find("------WebKitForm", pos) - pos);
 					}
 				}
-				//else check if the key has a value
-				else if ( ! post_query.compare(pos, 4,"\r\n\r\n") ) {
-					pos += std::strlen("\r\n\r\n");
-					_fout << post_query.substr(pos, post_query.find("------WebKitForm", pos) - pos);
-				}
 			}
+		}
+		else
+		{
+			std::ofstream 	_uploaded_file;
+			std::string file_name = uploads_dir + "/" + _request->readPath().substr(_request->readPath().rfind('/') + 1); 
+			http::remove_extra_backslash(file_name);
+			_uploaded_file.open(file_name.c_str(), std::ios::out | std::ios::trunc );
+			if ( _uploaded_file.good() ) {
+				_uploaded_file << this->_request->getRequestBody();
+			}
+			_uploaded_file.close();
 		}
 		_fout.close();
 	}
@@ -382,7 +396,7 @@ namespace http {
 		std::size_t		pos;
 
 		// Checking if we are returning an error page to 
-		if ( status != OK || status != MOVEDPERMANENTLY || status != FOUND )  {
+		if ( !(status == OK || status == MOVEDPERMANENTLY || status == FOUND ))  {
 			tmp.insert( 0, "text/html" );
 			return tmp;
 		}
@@ -409,7 +423,7 @@ namespace http {
 		std::ifstream		fin;
 		std::string			error_pages;
 
-		// if we have a LISTDIRECTORYCONTENT request, do 
+		// if we have a LISTDIRECTORYCONTENT request (AKA autoindex	on), do 
 		if ( status == LISTDIRECTORYCONTENTS ) {
 			ft::listDirectoryContent(web_page, _loc_file_path, _root_directory);
 			status = OK;
@@ -420,10 +434,10 @@ namespace http {
 		// if error_pages.size() <= 0, use our default error page directory
 		// else, use the error_page value from server config
 		error_pages = _server->readErrorPage();
-		if ( error_pages.size() <= 0 )
+		if ( error_pages.size() == 0 )
 			buff_tmp << "public_html/error_pages/" << status << ".html";
 		else
-			buff_tmp << error_pages.c_str() << "/" << status << ".html";
+			buff_tmp << error_pages.c_str() << status << ".html";
 
 		fin.open( buff_tmp.str().c_str() );
 		if ( fin.good() ) {
@@ -465,8 +479,7 @@ namespace http {
 			{
 				std::ifstream		fin;
 				std::string			tmp_local_path = loc_file_path;
-
-				if ( ! tmp_local_path.empty() && *tmp_local_path.end() - 1 != '/' )
+				if ( ! tmp_local_path.empty() && *(tmp_local_path.end() - 1) != '/' )
 					tmp_local_path.push_back('/');
 				tmp_local_path.append( ((it->readIndex().size() > 0) ? it->readIndex() : ";)") ); // append ;)?
 				fin.open(tmp_local_path.c_str());
@@ -482,8 +495,10 @@ namespace http {
 					return NOTFOUND;
 				}
 			}
-
-			_location.append(it->readIndex());
+			if (*(_location.end() - 1) == '/')
+				_location.append(it->readIndex());
+			else
+				_location.append("/" + it->readIndex());
 			return MOVEDPERMANENTLY;	
 		}
 
@@ -494,7 +509,7 @@ namespace http {
 		}
 		return NONE;
 	}
-	//TODO check if allowed method
+
 	bool Response::isCgiFile(const std::string& file)
 	{
 		if (this->_server->getCgi().empty() || file.find_last_of(".") == std::string::npos)
@@ -503,11 +518,15 @@ namespace http {
 		std::map<std::string, std::pair<std::string, std::string> >::iterator element = this->_server->getCgi().find(ext);
 		if (element == this->_server->getCgi().end())
 			return false;
+		if (element->second.first == "GET" && this->_request->readMethod() != GET )
+			return false;
+		if (element->second.first == "POST" && this->_request->readMethod() != POST )
+			return false;
 		else
 		{
-			this->_request.setCgi_exe(element->second.second);
-			this->_request.setCgi_method(element->second.first);
-			return false;
+			this->_request->setCgi_exe(element->second.second);
+			this->_request->setCgi_method(element->second.first);
+			return true;
 		}
 	}
 

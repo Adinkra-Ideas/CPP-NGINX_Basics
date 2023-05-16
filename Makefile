@@ -1,4 +1,4 @@
-NAME	=	webserv
+NAME	=	nginy
 
 SRCS		=	main.cpp ConfigParser.cpp Server.cpp ServerManager.cpp Client.cpp \
 				Request.cpp Response.cpp utils.cpp Location.cpp Types.cpp Cgi.cpp

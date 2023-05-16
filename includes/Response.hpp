@@ -24,11 +24,11 @@ namespace http {
 	public:
 		// ****** Constructors and Destructor **********
 		Response( void );
-		Response(const Response &copy);
-		~Response();
+		Response( const Response &other );
+		~Response( void );
 		
 		// ************* Operators *********************
-		Response & operator=(const Response &assign);
+		Response & operator=( const Response &other );
 
 		// ************* Reading & Writing Operations **********
 		void        	setRequest(Request &request);
@@ -39,16 +39,18 @@ namespace http {
 
 		// ******************* The Rest  *******************************
 		void			buildResponse( void );
+		void set_bytesend(int n);
+		int get_bytesend(void);
 
 	private:
-		Request				_request;			// object holding the parsed requestheader
+		Request				*_request;			// object holding the parsed requestheader
 		http::Server		*_server;			// pointer to server object managing this response
 		std::string			_loc_file_path;		// The final local/server filepath after concatening the root path from config file with the httpRequest path received from client
 		std::string			_web_page;				// where the returned webpage will be stored
 		std::string     	_response_content;		// where the http response will be stored
 		std::string			_location;				// Web address where the client's data eventually got fetched from (after all the redirections)
 		std::string			_root_directory;		// directory used as root by the route(aka location context) servicing this request from _server config
-		// std::string			_key_value;			// if a GET request has key=>values appended, they will be backed up to this string
+		int					byte_send;
 
 		// ******************* The Rest  *******************************
 		std::string			translateErrorCode( const ErrorCode& status_code );
@@ -62,7 +64,7 @@ namespace http {
 		ErrorCode			extractDirFromWebUrl( std::string& request_dir,
 												std::string& request_fname, std::string& request_path );
 		ErrorCode			setIteratorToLocationContext( std::vector<http::Location>::iterator& it,
-											std::string& path, std::string& fname, const char *method );
+										const std::string& path, std::string& fname, const char *method );
 		void				collatePostQuery( const std::string& post_query,
 												std::ofstream& _fout, const std::string& uploads_dir  );
 	};

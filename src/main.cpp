@@ -4,14 +4,6 @@
 # include "ServerManager.hpp"
 # include "Server.hpp"
 
-//TODO error handling
-//TODO changing namespace?
-//TODO adding cgi
-//TODO adding timeout on connections
-//TODO adding a logger class?
-//TODO adding signal handlers?
-//TODO checking leaks
-//TODO check when to close fd of client
 int main( int argc, char **argv )
 {
 	http::ServerManager		master;
@@ -25,4 +17,3 @@ int main( int argc, char **argv )
 
 	return (0);
 }
-

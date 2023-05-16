@@ -29,8 +29,6 @@ namespace http {
 	// **********************************************
 	void	ServerManager::parseConfig( const char *path ) {
 		parser_function_object	parser(_servers, path);
-		// std::cout << " port " << _servers[0].readPort() << std::endl;
-		// std::cout << " port " << _servers[1].readPort() << std::endl;
 	}
 
 	// **********************************************************
@@ -52,7 +50,6 @@ namespace http {
 		for (std::vector<http::Server>::iterator iter = this->_servers.begin(); iter != this->_servers.end(); ++iter)
 		{
 			iter->bindServerSockAddr();
-
 			// Checking if the FD of this server's socket Address
 			// will be okay to use in fd_set data type
 			if ( iter->readInSock() >= FD_SETSIZE ) {
@@ -83,7 +80,6 @@ namespace http {
 		ft::initSignal();
 	}
 
-	//TODO timeout checker for clients
 	void    ServerManager::runServers( void ) {
 		fd_set			_received_fds_tmp;
 		fd_set 			_write_fds_tmp;
@@ -123,12 +119,10 @@ namespace http {
 				
 				// We're here. But first, we need to complete understanding what's going on in readRequest(). the request and response objects
 				else if (FD_ISSET(i, &_write_fds_tmp) && this->connected_clients.count(i))
-				{
 					sendResponce(i, this->connected_clients[i]);
-				}
-				// else if (FD_ISSET(i, &_except_fds) // This is for managing exception if necessary
 			}
 			checkTimeout();
+			// usleep(500);
 		}	
 	}
 	void ServerManager::checkTimeout()
@@ -137,14 +131,12 @@ namespace http {
 		{
 			if (difftime(time(NULL), iter->second.getupdateTime()) > TIMEOUTTIME && iter->second.getRequest().has_request())
 			{
-				//TODO send error msg to client
 				iter->second.request.setStatusCode(REQUESTTIMEOUT);
 				iter->second.buildResponse();
 				removeFDToSet(iter->first, this->_received_fds);
 				addFDToSet(iter->first, this->_write_fds);
 				print_status(ft_GREEN, "Timeout Closing connection to Client because of timeout");
 				iter->second.updateTime();
-				// closeConnectionToClient(iter->first);
 			}
 		}
 	}
@@ -159,8 +151,6 @@ namespace http {
 
 	}
 	// **********************************************************
-	// rcvd_fds_tmp param1 is a reference to the fd_set object 	*
-	// that select() generated through its select(param2)		*
 	// server param is the Server this client connected to.		*
 	// Call accept() using server's incoming Socket FD,	then	*
 	// Create a new Client object that holds the copy of 		*
@@ -232,11 +222,8 @@ namespace http {
 		// Reading Clients httpRequest details from their 
 		// outbound socket addr FD into buffer
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		// std::cout << "Client request : \n" << buffer << std::endl;
-		//std::cout << "bytes read : " << bytes_read << std::endl;
 		if (bytes_read == 0)
 		{
-			//TODO change msg
 			print_status(ft_GREEN, "Closing connection because no activity");
 			removeFDToSet(fd, this->_received_fds);
 			close(fd);
@@ -254,15 +241,14 @@ namespace http {
 		else
 		{
 			std::string request(buffer, bytes_read);
-			//std::cout << "Client header : \n" << request << "$" << std::endl;
 			client.updateTime();
 			client.request.parse(request);
 			memset(buffer, 0 , sizeof(buffer));
 		}	
 		if (client.request.parsingFinished() || client.request.getErrorCode() != NONE) // even on bad request server sends an answer
 		{
-			assign_server_for_response(client); // I think this is a duplicate action. i might be wrong though
-			client.buildResponse(); //here
+			assign_server_for_response(client);
+			client.buildResponse();
 			removeFDToSet(fd, this->_received_fds);
 			addFDToSet(fd, this->_write_fds);
 		}
@@ -272,12 +258,13 @@ namespace http {
 	void ServerManager::sendResponce(int fd, Client &client)
 	{
 
-		long bytesSent;
-		//std::cout << "server response: " << std::endl << client.response.refResponseCont() << std::endl;
-		bytesSent = send(client.getSocket(), client.response.refResponseCont().data(), client.response.refResponseCont().size(), 0);
-		if ( bytesSent > 0 &&
-				static_cast<long unsigned int>(bytesSent) == client.response.refResponseCont().size() )
-				print_status(ft_GREEN, "Server Response sent to client");
+		int bytesSent;
+		bytesSent = send(client.getSocket(), client.response.refResponseCont().c_str() + client.response.get_bytesend(),
+			 client.response.refResponseCont().size() - client.response.get_bytesend(), 0);
+		if ( bytesSent > 0)
+		{
+			client.response.set_bytesend(client.response.get_bytesend() + bytesSent);
+		}
 		else if (bytesSent == 0)
 		{
 			print_status(ft_GREEN, "Closing connection because no activity");
@@ -287,16 +274,28 @@ namespace http {
 			return ;
 		}
 		else
+		{
 			print_status(ft_RED, "Error sending response to client");
-
-		//always keep the connection alive
-		removeFDToSet(fd, this->_write_fds);
-		addFDToSet(fd, this->_received_fds);
-		client.response.refResponseCont().clear();
-		client.request.clear();
+			removeFDToSet(fd, this->_write_fds);
+			close(fd);
+			this->connected_clients.erase(fd);
+			return ;
+		}
+			
+		if (static_cast<size_t>(client.response.get_bytesend()) == client.response.refResponseCont().size())
+		{
+			print_status(ft_GREEN, "Server Response sent to client");
+			//always keep the connection alive
+			removeFDToSet(fd, this->_write_fds);
+			addFDToSet(fd, this->_received_fds);
+			std::string("").swap(client.response.refResponseCont());
+			//client.response.refResponseCont().clear();
+			client.response.set_bytesend(0);
+			client.request.clear();
+		}
 	}
 
-	void    ServerManager::assign_server_for_response(Client &client) // I thought the processing server has previously being assigned to this client.server() at the point of declaration in acceptConnection()?
+	void    ServerManager::assign_server_for_response(Client &client)
 	{
 		for(std::vector<http::Server>::iterator it = this->_servers.begin(); it != this->_servers.end(); ++it)
 		{

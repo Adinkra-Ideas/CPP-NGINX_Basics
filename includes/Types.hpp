@@ -19,9 +19,6 @@ namespace http {
 	class Types
 	{
 	public:
-		typedef	typename std::map<std::string, std::string> str_to_str_map;
-		typedef typename std::set<std::string>				str_set;
-
 		// ****** Constructors and Destructor **********
 		~Types();
 		Types();
@@ -31,12 +28,12 @@ namespace http {
 		Types& operator= ( const Types& other );
 
 		// ************* Reading & Writing Operations **********
-		const	str_to_str_map& readMimeTypes( void );
-		const	str_set& 		readMethodTypes( void );
+		const	std::map<std::string, std::string>& readMimeTypes( void );
+		const	std::set<std::string>& 		readMethodTypes( void );
 
 	private:
-		str_to_str_map	_mime_types;
-		str_set			_method_types;
+		std::map<std::string, std::string>	_mime_types;
+		std::set<std::string>			_method_types;
 	};
 
 }	// namespace http

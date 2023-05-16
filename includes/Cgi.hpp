@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Cgi.hpp                                            :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/03/23 13:54:06 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/31 19:51:39 by hrings           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef CGI_HPP
 # define CGI_HPP
 
@@ -23,23 +11,26 @@
 class Cgi
 {
 	public:
-		Cgi(const Request &copy);
+		Cgi(std::string root);
 		~Cgi();
 		ErrorCode getErrorCode();
-		std::string getBody();
+		//std::string &getBody();
 		void parse_body_for_headers();
-		
-		
+		void set_request(Request *request);
+		void run_cgi();
+
+	
+		Request				*_request;
 	private:
-		Request				_request;
 		ErrorCode			error_code;
-		std::string			body;
+		//std::string			body;
 		std::map<std::string, std::string> env_var;
 		char**	env;
 		char *argv[3];
 		std::string file_path;
 		std::string working_dir;
 		std::string execute_dir;
+		std::string server_root;
 		void methodCheck();
 		void initEnv();
 		void executeScript();

@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Client.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: hrings <hrings@student.42.fr>              +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/02/28 13:06:35 by hrings            #+#    #+#             */
-/*   Updated: 2023/03/21 20:52:19 by hrings           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef CLIENT_HPP
 # define CLIENT_HPP
 
@@ -38,7 +26,6 @@ class Client
 		Request getRequest() const;
 		void updateTime();
 		time_t getupdateTime();
-		//TODO make request/response private?
 		Request request;
 		http::Response response;					// This object receives the parsed requestHeader object through its method response.setRequest(request)
 	private:		
